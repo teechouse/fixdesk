@@ -3,370 +3,239 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tech House — Repair Status</title>
+<title>Repair Status – Tech House</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0e1a;
+    color: #fff;
     min-height: 100vh;
-    background: #0d1b2a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    overflow-x: hidden;
-  }
-
-  /* Animated background dots */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 28px 28px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .card {
-    position: relative;
-    z-index: 1;
-    background: #10203a;
-    border: 1px solid #1e3456;
-    border-radius: 24px;
-    width: 100%;
-    max-width: 440px;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-  }
-
-  /* Top brand bar */
-  .brand-bar {
-    background: #0b1928;
-    border-bottom: 1px solid #1e3456;
-    padding: 18px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .brand-icon {
-    width: 36px;
-    height: 36px;
-  }
-  .brand-name {
-    font-size: 1.35rem;
-    font-weight: 900;
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-  .brand-tech { color: #ffffff; }
-  .brand-house { color: #ffffff; }
-  .brand-t { color: #f5882a; }
-  .brand-h { color: #f5882a; }
-
-  /* Status hero area */
-  .status-hero {
-    padding: 32px 24px 24px;
-    text-align: center;
-    position: relative;
-    transition: background 0.4s ease;
-  }
-
-  .status-icon-wrap {
-    width: 110px;
-    height: 110px;
-    margin: 0 auto 20px;
-    position: relative;
-  }
-  .status-icon-bg {
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    position: relative;
-    transition: background 0.4s ease, box-shadow 0.4s ease;
-  }
-  /* Pulse ring */
-  .status-icon-bg::after {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid;
-    opacity: 0;
-    animation: pulse-ring 2.5s ease-out infinite;
-  }
-  @keyframes pulse-ring {
-    0% { opacity: 0.6; transform: scale(0.9); }
-    100% { opacity: 0; transform: scale(1.25); }
-  }
-
-  .status-label {
-    font-size: 2rem;
-    font-weight: 900;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    line-height: 1;
-    margin-bottom: 8px;
-    transition: color 0.4s ease;
-  }
-  .status-desc {
-    font-size: 0.92rem;
-    color: #7a8fa8;
-    line-height: 1.5;
-  }
-
-  /* Progress stepper */
-  .stepper {
-    padding: 0 24px 24px;
-  }
-  .stepper-title {
-    font-size: 0.68rem;
-    color: #4a6080;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    text-align: center;
-  }
-  .steps {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 16px 40px;
+  }
+
+  /* ── LOGO ── */
+  .logo-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #0d2137, #1a3a5c);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 10px;
+    border: 2px solid rgba(255,140,0,0.4);
+    box-shadow: 0 0 24px rgba(255,140,0,0.15);
+  }
+  .logo-text { font-size: 1.6rem; font-weight: 900; letter-spacing: 1px; }
+  .logo-text span { color: #ff8c00; }
+
+  /* ── TICKET INFO ── */
+  .ticket-info {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .ticket-id {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .customer-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+  }
+  .device-info {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 3px;
+  }
+
+  /* ── STATUS CARD ── */
+  .status-card {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* backgrounds per status */
+  .status-card.pending    { background: linear-gradient(145deg, #0d1b2e, #12263d); }
+  .status-card.diagnosing { background: linear-gradient(145deg, #0d1b2e, #12263d); }
+  .status-card.inprogress { background: linear-gradient(145deg, #0d1b2e, #12263d); }
+  .status-card.waiting    { background: linear-gradient(145deg, #1a1200, #2a1f00); }
+  .status-card.ready      { background: linear-gradient(145deg, #001a10, #002a18); }
+  .status-card.completed  { background: linear-gradient(145deg, #001a10, #002a18); }
+  .status-card.delivered  { background: linear-gradient(145deg, #1a1a2e, #16213e); }
+  .status-card.cancelled  { background: linear-gradient(145deg, #1a0000, #2a0000); }
+  .status-card.unknown    { background: linear-gradient(145deg, #111, #1a1a1a); }
+
+  .status-icon { font-size: 72px; margin-bottom: 16px; display: block; }
+
+  .status-label {
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  .status-label.pending    { color: #fff; }
+  .status-label.diagnosing { color: #fff; }
+  .status-label.inprogress { color: #f5c518; }
+  .status-label.waiting    { color: #ff8c00; }
+  .status-label.ready      { color: #2ecc71; }
+  .status-label.completed  { color: #2ecc71; }
+  .status-label.delivered  { color: #aaa; }
+  .status-label.cancelled  { color: #ff4444; }
+  .status-label.unknown    { color: #888; }
+
+  .status-sublabel {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.45);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .status-desc {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  /* ── STEPS PROGRESS ── */
+  .steps-wrap {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 24px;
+  }
+  .steps-title {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
   }
   .step {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    position: relative;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
-  .step:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 13px;
-    top: 28px;
-    bottom: -2px;
-    width: 2px;
-    background: #1e3456;
-    z-index: 0;
-  }
-  .step.done:not(:last-child)::after { background: #f5882a; }
-  .step.current:not(:last-child)::after { background: linear-gradient(to bottom, #f5882a, #1e3456); }
-
+  .step:last-child { border-bottom: none; }
   .step-dot {
-    width: 28px;
-    height: 28px;
+    width: 10px; height: 10px;
     border-radius: 50%;
-    border: 2px solid #1e3456;
-    background: #0b1928;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
     flex-shrink: 0;
-    margin-bottom: 16px;
-    position: relative;
-    z-index: 1;
-    transition: all 0.3s ease;
+    border: 2px solid rgba(255,255,255,0.2);
   }
-  .step.done .step-dot {
-    background: #f5882a;
-    border-color: #f5882a;
-    color: #fff;
+  .step-dot.done    { background: #2ecc71; border-color: #2ecc71; }
+  .step-dot.current { background: #f5c518; border-color: #f5c518; box-shadow: 0 0 8px #f5c518; }
+  .step-dot.todo    { background: transparent; border-color: rgba(255,255,255,0.2); }
+  .step-text {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.5);
   }
-  .step.current .step-dot {
-    background: #f5882a;
-    border-color: #f5c87a;
-    color: #fff;
-    box-shadow: 0 0 12px rgba(245,136,42,0.5);
-    animation: dot-pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes dot-pulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(245,136,42,0.4); }
-    50% { box-shadow: 0 0 20px rgba(245,136,42,0.7); }
-  }
-  .step.future .step-dot { opacity: 0.35; }
+  .step-text.done    { color: rgba(255,255,255,0.8); }
+  .step-text.current { color: #fff; font-weight: 700; }
 
-  .step-info { padding-top: 4px; flex: 1; }
-  .step-name {
-    font-size: 0.87rem;
-    font-weight: 700;
-    color: #c8d8e8;
-    line-height: 1.2;
-  }
-  .step.future .step-name { color: #4a6080; font-weight: 500; }
-  .step.current .step-name { color: #f5c87a; }
-  .step-sub {
-    font-size: 0.75rem;
-    color: #4a6080;
-    margin-top: 2px;
-  }
-  .step.current .step-sub { color: #7a9aaa; }
-
-  /* Info section */
-  .info-section {
-    margin: 0 24px 24px;
-    background: #0b1928;
-    border: 1px solid #1e3456;
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .info-row {
-    display: flex;
-    padding: 12px 16px;
-    border-bottom: 1px solid #1e3456;
-    align-items: center;
-    gap: 10px;
-  }
-  .info-row:last-child { border-bottom: none; }
-  .info-icon { font-size: 1rem; width: 20px; text-align: center; }
-  .info-label { font-size: 0.72rem; color: #4a6080; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; min-width: 80px; }
-  .info-val { font-size: 0.87rem; color: #c8d8e8; font-weight: 600; flex: 1; }
-
-  /* Footer */
-  .card-footer {
-    background: #0b1928;
-    border-top: 1px solid #1e3456;
-    padding: 16px 24px;
+  /* ── FOOTER ── */
+  .footer-info {
+    width: 100%; max-width: 420px;
     text-align: center;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.25);
+    line-height: 1.6;
   }
-  .footer-text { font-size: 0.75rem; color: #4a6080; line-height: 1.6; }
-  .footer-brand { color: #f5882a; font-weight: 700; }
+  .footer-info a { color: rgba(255,140,0,0.6); text-decoration: none; }
 
-  /* Loading / Error states */
-  .state-wrap {
-    padding: 60px 24px;
+  /* ── LOADING / ERROR ── */
+  .loading {
     text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.4);
   }
-  .state-icon { font-size: 2.5rem; margin-bottom: 16px; }
-  .state-title { font-size: 1.1rem; font-weight: 700; color: #c8d8e8; margin-bottom: 8px; }
-  .state-sub { font-size: 0.85rem; color: #4a6080; }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #1e3456;
-    border-top-color: #f5882a;
+  .loading .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #ff8c00;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 20px;
+    margin: 0 auto 16px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Status color themes */
-  .theme-pending   { --sc: #f5c842; --sc-bg: rgba(245,200,66,0.12); }
-  .theme-diagnosing { --sc: #a076f9; --sc-bg: rgba(160,118,249,0.12); }
-  .theme-inprogress { --sc: #4f8ef7; --sc-bg: rgba(79,142,247,0.12); }
-  .theme-waiting   { --sc: #f5882a; --sc-bg: rgba(245,136,42,0.12); }
-  .theme-ready     { --sc: #2ec97e; --sc-bg: rgba(46,201,126,0.15); }
-  .theme-completed { --sc: #2ec97e; --sc-bg: rgba(46,201,126,0.15); }
-
-  .status-hero { background: var(--sc-bg, rgba(245,136,42,0.05)); }
-  .status-icon-bg {
-    background: var(--sc-bg, rgba(245,136,42,0.1));
-    box-shadow: 0 0 30px var(--sc-bg, transparent);
+  .error-box {
+    background: rgba(255,60,60,0.1);
+    border: 1px solid rgba(255,60,60,0.3);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    max-width: 380px;
+    width: 100%;
   }
-  .status-icon-bg::after { border-color: var(--sc, #f5882a); }
-  .status-label { color: var(--sc, #f5882a); }
+  .error-box .err-icon { font-size: 40px; margin-bottom: 12px; }
+  .error-box p { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.5; }
 
-  /* Ready / Completed — special glow */
-  .theme-ready .card,
-  .theme-completed .card {
-    border-color: rgba(46,201,126,0.3);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(46,201,126,0.08);
-  }
+  /* ── STARS ── */
+  .stars { font-size: 1.4rem; margin-top: 12px; letter-spacing: 2px; }
 
-  /* Stars for completed */
-  .stars { font-size: 1.4rem; letter-spacing: 4px; margin-top: 10px; }
-
-  /* Updated time */
-  .updated-chip {
-    display: inline-block;
-    background: rgba(79,142,247,0.1);
-    border: 1px solid rgba(79,142,247,0.2);
-    color: #4f8ef7;
-    font-size: 0.68rem;
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin-top: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+  /* ── LAST UPDATED ── */
+  .last-updated {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.2);
+    margin-top: 16px;
+    text-align: center;
   }
 
-  /* Refresh hint */
-  .refresh-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 14px;
-    background: none;
-    border: 1px solid #1e3456;
-    color: #4a6080;
-    font-size: 0.75rem;
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
+  /* glow pulse for ready */
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(46,204,113,0.2); }
+    50%       { box-shadow: 0 0 40px rgba(46,204,113,0.5); }
   }
-  .refresh-btn:hover { border-color: #f5882a; color: #f5882a; }
+  .status-card.ready { animation: glow-pulse 2s ease-in-out infinite; }
 </style>
 </head>
 <body>
 
-<div class="card" id="card">
-  <!-- Loading state by default -->
-  <div class="brand-bar">
-    <div class="brand-logo">
-      <!-- House SVG icon -->
-      <svg class="brand-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 6L4 18v14h12v-8h8v8h12V18L20 6z" fill="#1e3456" stroke="#2e4a70" stroke-width="1"/>
-        <path d="M20 4L2 17" stroke="#f5882a" stroke-width="2" stroke-linecap="round"/>
-        <path d="M20 4L38 17" stroke="#f5882a" stroke-width="2" stroke-linecap="round"/>
-        <!-- Power/wifi icon on roof -->
-        <circle cx="28" cy="10" r="3" fill="none" stroke="#f5882a" stroke-width="1.2"/>
-        <path d="M28 10v-3" stroke="#f5882a" stroke-width="1.2" stroke-linecap="round"/>
-        <!-- Door -->
-        <rect x="16" y="22" width="8" height="10" rx="1" fill="#f5882a" opacity="0.7"/>
-        <!-- Windows -->
-        <rect x="8" y="20" width="5" height="5" rx="0.5" fill="#4f8ef7" opacity="0.6"/>
-        <rect x="27" y="20" width="5" height="5" rx="0.5" fill="#4f8ef7" opacity="0.6"/>
-      </svg>
-      <div class="brand-name">
-        <span class="brand-tech"><span class="brand-t">T</span>ECH</span><br>
-        <span class="brand-house"><span class="brand-h">H</span>OUSE</span>
-      </div>
-    </div>
-  </div>
+<!-- LOGO -->
+<div class="logo-wrap">
+  <div class="logo-icon">🏠</div>
+  <div class="logo-text">TECH <span>HOUSE</span></div>
+</div>
 
-  <div id="mainContent">
-    <div class="state-wrap">
-      <div class="spinner"></div>
-      <div class="state-title">Loading your repair status…</div>
-      <div class="state-sub">Please wait a moment</div>
-    </div>
-  </div>
-
-  <div class="card-footer">
-    <div class="footer-text">
-      Repair tracking by <span class="footer-brand">Tech House</span><br>
-      Keep this receipt to collect your device.
-    </div>
+<!-- DYNAMIC CONTENT -->
+<div id="root">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Loading your repair status…</div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJTsw5BH8d46v8IgJ9lFN9GXd2NgAfqVQ",
@@ -377,207 +246,171 @@ const firebaseConfig = {
   appId: "1:1067509472890:web:338cd4531be1c6593b65c3"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
 
-// ── Status config ──────────────────────────────────────────
+// ── STATUS CONFIG ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   'Pending': {
+    key: 'pending',
     icon: '📋',
     label: 'PENDING',
-    desc: 'We have received your item and it is now in the queue.',
-    theme: 'theme-pending',
-    stepIndex: 0,
+    sub: 'In Queue',
+    desc: 'We have received your device and it is now in the queue. We will start working on it shortly.',
+    step: 0
   },
   'Diagnosing': {
+    key: 'diagnosing',
     icon: '🔍',
     label: 'DIAGNOSING',
-    desc: 'Our technician is checking your device to find the issue.',
-    theme: 'theme-diagnosing',
-    stepIndex: 1,
+    sub: 'Under Inspection',
+    desc: 'Our technician is currently checking your device to identify the issue.',
+    step: 1
   },
   'In Progress': {
-    icon: '⚙️',
+    key: 'inprogress',
+    icon: '🔧',
     label: 'IN PROGRESS',
-    desc: 'Our technicians are actively working on your item.',
-    theme: 'theme-inprogress',
-    stepIndex: 2,
+    sub: 'Being Repaired',
+    desc: 'Our technicians are actively working on your device.',
+    step: 2
   },
   'Waiting for Parts': {
+    key: 'waiting',
     icon: '📦',
     label: 'WAITING FOR PARTS',
-    desc: 'We are waiting for the necessary parts to arrive.',
-    theme: 'theme-waiting',
-    stepIndex: 3,
+    sub: 'Parts on the Way',
+    desc: 'We are waiting for the necessary parts to arrive. We will continue the repair as soon as they are here.',
+    step: 2
   },
   'Ready': {
+    key: 'ready',
     icon: '✅',
     label: 'READY FOR PICKUP',
-    desc: 'Your item is ready! You can now come and pick it up.',
-    theme: 'theme-ready',
-    stepIndex: 4,
+    sub: 'Come Collect It!',
+    desc: 'Your device is ready! You can come to Tech House and pick it up anytime.',
+    step: 3
   },
   'Completed': {
-    icon: '🎉',
+    key: 'completed',
+    icon: '🌟',
     label: 'COMPLETED',
-    desc: 'Your repair is complete. Thank you for choosing Tech House!',
-    theme: 'theme-completed',
-    stepIndex: 5,
+    sub: 'Repair Done',
+    desc: 'The repair is complete. Thank you for choosing Tech House — we appreciate your trust!',
+    step: 3
   },
+  'Delivered': {
+    key: 'delivered',
+    icon: '🏠',
+    label: 'DELIVERED',
+    sub: 'Device Returned',
+    desc: 'Your device has been returned to you. We hope everything is working perfectly!',
+    step: 4
+  },
+  'Cancelled': {
+    key: 'cancelled',
+    icon: '❌',
+    label: 'CANCELLED',
+    sub: 'Ticket Cancelled',
+    desc: 'This repair ticket has been cancelled. Please contact Tech House for more information.',
+    step: -1
+  }
 };
 
 const STEPS = [
-  { key: 'Pending',           icon: '📋', name: 'Pending',           sub: 'Item received & in queue' },
-  { key: 'Diagnosing',        icon: '🔍', name: 'Diagnosing',        sub: 'Checking the issue' },
-  { key: 'In Progress',       icon: '⚙️', name: 'In Progress',       sub: 'Repair underway' },
-  { key: 'Waiting for Parts', icon: '📦', name: 'Waiting for Parts', sub: 'Parts on the way' },
-  { key: 'Ready',             icon: '✅', name: 'Ready for Pickup',   sub: 'Come collect your device' },
-  { key: 'Completed',         icon: '🎉', name: 'Completed',         sub: 'All done!' },
+  { label: 'Received', key: 'pending' },
+  { label: 'Diagnosing', key: 'diagnosing' },
+  { label: 'In Repair', key: 'inprogress' },
+  { label: 'Ready / Completed', key: 'ready' },
+  { label: 'Delivered', key: 'delivered' },
 ];
 
-// ── Helpers ────────────────────────────────────────────────
 function fmtDate(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
-function timeSince(iso) {
-  if (!iso) return '';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just updated';
-  if (mins < 60) return `Updated ${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Updated ${hrs}h ago`;
-  return `Updated ${Math.floor(hrs/24)}d ago`;
-}
-
-// ── Render ─────────────────────────────────────────────────
 function render(r) {
-  const cfg = STATUS_CONFIG[r.status] || STATUS_CONFIG['Pending'];
-  const stepIdx = cfg.stepIndex;
-  const isReady = r.status === 'Ready' || r.status === 'Completed';
+  const cfg = STATUS_CONFIG[r.status] || {
+    key: 'unknown', icon: '❓', label: r.status||'UNKNOWN',
+    sub: '', desc: 'Please contact Tech House for more information.', step: 0
+  };
 
-  // Build stepper HTML
-  const stepsHtml = STEPS.map((s, i) => {
-    let cls = 'future';
-    let dot = i + 1;
-    if (i < stepIdx) { cls = 'done'; dot = '✓'; }
-    else if (i === stepIdx) { cls = 'current'; dot = s.icon; }
-    return `
-      <div class="step ${cls}">
-        <div class="step-dot">${dot}</div>
-        <div class="step-info">
-          <div class="step-name">${s.name}</div>
-          <div class="step-sub">${s.sub}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const currentStep = cfg.step;
+  const stepsHtml = cfg.key === 'cancelled' ? '' : `
+    <div class="steps-wrap">
+      <div class="steps-title">Repair Progress</div>
+      ${STEPS.map((s, i) => {
+        let state = 'todo';
+        if (i < currentStep) state = 'done';
+        else if (i === currentStep) state = 'current';
+        return `<div class="step">
+          <div class="step-dot ${state}"></div>
+          <div class="step-text ${state}">${s.label}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
 
-  const starsHtml = isReady ? `<div class="stars">⭐⭐⭐⭐⭐</div>` : '';
-  const updatedAt = r.updatedAt || r.createdAt;
+  const stars = (cfg.key === 'completed' || cfg.key === 'delivered')
+    ? `<div class="stars">⭐⭐⭐⭐⭐</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:6px;">Thank you for choosing Tech House!</div>`
+    : '';
 
-  document.getElementById('mainContent').innerHTML = `
-    <div class="status-hero ${cfg.theme}">
-      <div class="status-icon-wrap">
-        <div class="status-icon-bg">${cfg.icon}</div>
-      </div>
-      <div class="status-label">${cfg.label}</div>
+  document.getElementById('root').innerHTML = `
+    <div class="ticket-info">
+      <div class="ticket-id">Ticket #${r.id}</div>
+      <div class="customer-name">${r.customer?.name || ''}</div>
+      <div class="device-info">${r.device?.type || ''}${r.device?.laptopType ? ' • ' + r.device.laptopType : ''} &nbsp;|&nbsp; ${r.serviceType || '—'}</div>
+    </div>
+
+    <div class="status-card ${cfg.key}">
+      <span class="status-icon">${cfg.icon}</span>
+      <div class="status-label ${cfg.key}">${cfg.label}</div>
+      <div class="status-sublabel">${cfg.sub}</div>
       <div class="status-desc">${cfg.desc}</div>
-      ${starsHtml}
-      <div class="updated-chip">🕐 ${timeSince(updatedAt)}</div>
+      ${stars}
     </div>
 
-    <div class="stepper">
-      <div class="stepper-title">Repair Progress</div>
-      <div class="steps">${stepsHtml}</div>
-    </div>
+    ${stepsHtml}
 
-    <div class="info-section">
-      <div class="info-row">
-        <span class="info-icon">🎫</span>
-        <span class="info-label">Ticket</span>
-        <span class="info-val" style="font-family:monospace;font-size:0.82rem;color:#f5c87a">#${r.id}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-icon">👤</span>
-        <span class="info-label">Name</span>
-        <span class="info-val">${r.customer?.name || '—'}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-icon">📱</span>
-        <span class="info-label">Device</span>
-        <span class="info-val">${r.device?.type || '—'}${r.device?.laptopType ? ' – ' + r.device.laptopType : ''}</span>
-      </div>
-      ${r.serviceType ? `
-      <div class="info-row">
-        <span class="info-icon">🔧</span>
-        <span class="info-label">Service</span>
-        <span class="info-val">${r.serviceType}</span>
-      </div>` : ''}
-      <div class="info-row">
-        <span class="info-icon">📅</span>
-        <span class="info-label">Received</span>
-        <span class="info-val">${fmtDate(r.createdAt)}</span>
-      </div>
-    </div>
+    <div class="last-updated">Received: ${fmtDate(r.createdAt)}</div>
 
-    <div style="text-align:center;padding-bottom:20px;">
-      <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Status</button>
-    </div>
-  `;
-
-  // Apply theme to card
-  const card = document.getElementById('card');
-  card.className = 'card ' + cfg.theme;
-}
-
-function showError(title, sub) {
-  document.getElementById('mainContent').innerHTML = `
-    <div class="state-wrap">
-      <div class="state-icon">❌</div>
-      <div class="state-title">${title}</div>
-      <div class="state-sub">${sub}</div>
+    <div class="footer-info" style="margin-top:20px;">
+      <div>Tech House Repair Center</div>
+      <div style="margin-top:4px;">This page updates automatically when your repair status changes.</div>
     </div>
   `;
 }
 
-function showNotFound() {
-  document.getElementById('mainContent').innerHTML = `
-    <div class="state-wrap">
-      <div class="state-icon">🔍</div>
-      <div class="state-title">Ticket Not Found</div>
-      <div class="state-sub">The ticket ID in this QR code does not match any repair in our system.<br><br>Please contact Tech House directly.</div>
+function showError(msg) {
+  document.getElementById('root').innerHTML = `
+    <div class="error-box">
+      <div class="err-icon">🔍</div>
+      <p>${msg}</p>
+    </div>
+    <div class="footer-info" style="margin-top:24px;">
+      <div>Tech House Repair Center</div>
+      <div style="margin-top:4px;">If you think this is a mistake, please contact us.</div>
     </div>
   `;
 }
 
-// ── Main ───────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 const params = new URLSearchParams(window.location.search);
-const ticketId = params.get('id') || params.get('ticket');
+const ticketId = params.get('id');
 
 if (!ticketId) {
-  showError('No Ticket ID', 'This QR code does not contain a valid ticket ID. Please scan again or contact us.');
+  showError('No ticket ID found in this link. Please scan the QR code on your receipt again.');
 } else {
-  // Initial fetch
-  const ref = doc(db, 'repairs', ticketId);
-  getDoc(ref).then(snap => {
+  // Real-time listener — updates automatically when status changes
+  onSnapshot(doc(db, 'repairs', ticketId), (snap) => {
     if (!snap.exists()) {
-      showNotFound();
+      showError(`Ticket <strong>${ticketId}</strong> was not found. Please contact Tech House.`);
     } else {
       render({ id: snap.id, ...snap.data() });
-      // Live updates — page auto-refreshes when status changes
-      onSnapshot(ref, docSnap => {
-        if (docSnap.exists()) {
-          render({ id: docSnap.id, ...docSnap.data() });
-        }
-      });
     }
-  }).catch(err => {
+  }, (err) => {
     console.error(err);
-    showError('Connection Error', 'Could not reach our servers. Please check your internet connection and try again.');
+    showError('Could not load repair status. Please check your internet connection and try again.');
   });
 }
 </script>
