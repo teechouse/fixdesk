@@ -569,14 +569,31 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <!-- ===== INVENTORY PAGE ===== -->
       <div class="page" id="page-inventory">
         <div class="sec-header">
-          <div class="sec-title">Inventory</div>
+          <div class="sec-title">📦 Inventory</div>
           <div class="sec-actions">
+            <button class="btn btn-ghost" onclick="openSaleScanner()">📷 Scan Sale</button>
             <button class="btn btn-ghost" onclick="openAdjustModal()">± Adjust Stock</button>
+            <button class="btn btn-ghost" onclick="showPage('sales')">🧾 Sales History</button>
             <button class="btn btn-primary" onclick="openInventoryModal()">＋ Add Product</button>
           </div>
         </div>
         <div id="inventoryStats" class="finance-row mb-16"></div>
+        <!-- SMART INSIGHTS -->
+        <div id="inventoryInsights" style="margin-bottom:16px;"></div>
         <div id="inventoryContainer"></div>
+      </div>
+
+      <!-- ===== SALES HISTORY PAGE ===== -->
+      <div class="page" id="page-sales">
+        <div class="sec-header">
+          <div class="sec-title">🧾 Sales History</div>
+          <div class="sec-actions">
+            <button class="btn btn-ghost" onclick="showPage('inventory')">← Back</button>
+            <button class="btn btn-primary" onclick="openManualSaleModal()">＋ Manual Sale</button>
+          </div>
+        </div>
+        <div id="salesStatsRow" class="finance-row mb-16"></div>
+        <div id="salesContainer"></div>
       </div>
 
       <!-- ===== FINANCE PAGE ===== -->
@@ -912,6 +929,138 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   </div>
 </div>
 
+<!-- SALE SCANNER MODAL -->
+<div class="modal-overlay" id="saleScannerModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">📷 Scan Product to Sell</div>
+      <button class="modal-close" onclick="closeSaleScanner()">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div style="position:relative;background:#000;min-height:260px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <video id="saleVideo" style="width:100%;max-height:300px;object-fit:cover;display:block;" playsinline autoplay muted></video>
+        <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+          <div style="width:180px;height:180px;position:relative;">
+            <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:3px solid #ff8c00;border-left:3px solid #ff8c00;border-radius:3px 0 0 0;"></div>
+            <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:3px solid #ff8c00;border-right:3px solid #ff8c00;border-radius:0 3px 0 0;"></div>
+            <div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:3px solid #ff8c00;border-left:3px solid #ff8c00;border-radius:0 0 0 3px;"></div>
+            <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:3px solid #ff8c00;border-right:3px solid #ff8c00;border-radius:0 0 3px 0;"></div>
+          </div>
+        </div>
+        <div id="saleScanMsg" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:0.78rem;background:rgba(0,0,0,0.5);padding:4px;">Point camera at product QR/barcode</div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-ghost" onclick="closeSaleScanner()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SALE CONFIRM MODAL (after scan or manual) -->
+<div class="modal-overlay" id="saleConfirmModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">💰 Confirm Sale</div>
+      <button class="modal-close" onclick="closeModal('saleConfirmModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="saleConfirmProduct" style="background:var(--bg3);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.9rem;"></div>
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label>Quantity Sold</label>
+          <input type="number" id="sale_qty" value="1" min="1" oninput="updateSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Sale Price Each (DZD)</label>
+          <input type="number" id="sale_price" placeholder="0" oninput="updateSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="sale_total" readonly style="font-weight:800;color:var(--green);opacity:1;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Buyer Name (optional)</label>
+        <input type="text" id="sale_buyer" placeholder="Customer name">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Note (optional)</label>
+        <input type="text" id="sale_note" placeholder="e.g. discounted, bundle deal…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('saleConfirmModal')">Cancel</button>
+      <button class="btn btn-ghost" onclick="confirmSaleAndPrint()">✅ Sell & Print Receipt</button>
+      <button class="btn btn-success" onclick="confirmSale()">✅ Confirm Sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL SALE MODAL -->
+<div class="modal-overlay" id="manualSaleModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">＋ Manual Sale</div>
+      <button class="modal-close" onclick="closeModal('manualSaleModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Product *</label>
+        <select id="msale_product" onchange="onManualProductChange()">
+          <option value="">— Select product —</option>
+        </select>
+      </div>
+      <div class="form-grid cols-3" style="margin-top:12px;">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="msale_qty" value="1" min="1" oninput="updateManualSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Price Each (DZD)</label>
+          <input type="number" id="msale_price" placeholder="0" oninput="updateManualSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="msale_total" readonly style="font-weight:800;color:var(--green);opacity:1;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Buyer Name (optional)</label>
+        <input type="text" id="msale_buyer" placeholder="Customer name">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Note (optional)</label>
+        <input type="text" id="msale_note" placeholder="e.g. discounted…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('manualSaleModal')">Cancel</button>
+      <button class="btn btn-ghost" onclick="saveManualSaleAndPrint()">✅ Sell & Print</button>
+      <button class="btn btn-success" onclick="saveManualSale()">✅ Confirm Sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATE QR MODAL -->
+<div class="modal-overlay" id="genQrModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">🔳 Product QR Code</div>
+      <button class="modal-close" onclick="closeModal('genQrModal')">×</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <div id="genQrProductName" style="font-weight:700;font-size:1rem;margin-bottom:4px;"></div>
+      <div id="genQrProductId" style="font-size:0.75rem;color:var(--text2);margin-bottom:16px;font-family:var(--mono);"></div>
+      <div id="genQrCode" style="display:inline-block;background:#fff;padding:12px;border-radius:8px;"></div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-top:12px;">Print this and stick it on the product</div>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-ghost" onclick="closeModal('genQrModal')">Close</button>
+      <button class="btn btn-primary" onclick="printProductQr()">🖨️ Print QR</button>
+    </div>
+  </div>
+</div>
+
 <!-- TRANSACTION MODAL -->
 <div class="modal-overlay" id="txnModal">
   <div class="modal">
@@ -967,9 +1116,25 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
           <option value="30">30 days</option>
         </select>
       </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">
+      <div class="form-section-title" style="margin-bottom:12px;">🔒 Change Password</div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>Current Password</label>
+        <input type="password" id="set_oldpwd" placeholder="Enter current password" autocomplete="off">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>New Password</label>
+        <input type="password" id="set_newpwd" placeholder="Enter new password" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="set_confirmpwd" placeholder="Repeat new password" autocomplete="new-password">
+      </div>
+      <div id="pwdChangeMsg" style="font-size:0.82rem;margin-top:8px;display:none;padding:8px 12px;border-radius:6px;"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('shopSettingsModal')">Cancel</button>
+      <button class="btn btn-ghost" onclick="changePassword()">🔒 Change Password</button>
       <button class="btn btn-primary" onclick="saveShopSettings()">Save Settings</button>
     </div>
   </div>
@@ -1070,8 +1235,8 @@ const db = getFirestore(app);
 //  FIRESTORE DB LAYER
 // ========================================================
 // In-memory cache — Firestore listeners keep it up to date
-const _cache = { repairs:[], thesis:[], inventory:[], transactions:[], earnings:[] };
-const COLLECTIONS = ['repairs','thesis','inventory','transactions','earnings'];
+const _cache = { repairs:[], thesis:[], inventory:[], transactions:[], earnings:[], sales:[] };
+const COLLECTIONS = ['repairs','thesis','inventory','transactions','earnings','sales'];
 
 // Setup real-time listeners for all collections
 function setupListeners() {
@@ -1092,6 +1257,7 @@ function onCollectionUpdate(col) {
   if (col === 'inventory') { renderDashboard(); if (activePage==='inventory') renderInventory(); }
   if (col === 'transactions') { renderDashboard(); if (activePage==='finance') renderFinance(); }
   if (col === 'earnings') { if (activePage==='earnings') renderEarningsTracker(); }
+  if (col === 'sales') { renderDashboard(); if (activePage==='sales') renderSalesHistory(); if (activePage==='inventory') renderInventory(); }
 }
 
 const DB = {
@@ -1131,6 +1297,11 @@ function openShopSettings() {
   document.getElementById('set_shopname').value = localStorage.getItem('fd_shop_name') || '';
   document.getElementById('set_shopphone').value = localStorage.getItem('fd_shop_phone') || '';
   document.getElementById('set_expiredays').value = localStorage.getItem('fd_expire_days') || '20';
+  document.getElementById('set_oldpwd').value = '';
+  document.getElementById('set_newpwd').value = '';
+  document.getElementById('set_confirmpwd').value = '';
+  const msgEl = document.getElementById('pwdChangeMsg');
+  if (msgEl) msgEl.style.display = 'none';
   openModal('shopSettingsModal');
 }
 
@@ -1142,6 +1313,38 @@ function saveShopSettings() {
   DELIVER_EXPIRE_DAYS = parseInt(days);
   closeModal('shopSettingsModal');
   toast('Settings saved!', 'success');
+}
+
+async function changePassword() {
+  const oldPwd = document.getElementById('set_oldpwd').value;
+  const newPwd = document.getElementById('set_newpwd').value;
+  const confirmPwd = document.getElementById('set_confirmpwd').value;
+  const msgEl = document.getElementById('pwdChangeMsg');
+
+  function showMsg(text, ok) {
+    msgEl.style.display = 'block';
+    msgEl.style.background = ok ? 'rgba(46,201,126,0.12)' : 'rgba(245,96,66,0.12)';
+    msgEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+    msgEl.style.border = ok ? '1px solid rgba(46,201,126,0.3)' : '1px solid rgba(245,96,66,0.3)';
+    msgEl.textContent = text;
+  }
+
+  if (!oldPwd || !newPwd || !confirmPwd) { showMsg('Please fill in all three password fields.', false); return; }
+  if (newPwd.length < 4) { showMsg('New password must be at least 4 characters.', false); return; }
+  if (newPwd !== confirmPwd) { showMsg('New passwords do not match.', false); return; }
+
+  // Verify current password
+  const oldHash = await hashPwd(oldPwd);
+  const stored = localStorage.getItem('fd_pwd');
+  if (oldHash !== stored) { showMsg('Current password is incorrect.', false); return; }
+
+  // Save new password
+  const newHash = await hashPwd(newPwd);
+  localStorage.setItem('fd_pwd', newHash);
+  document.getElementById('set_oldpwd').value = '';
+  document.getElementById('set_newpwd').value = '';
+  document.getElementById('set_confirmpwd').value = '';
+  showMsg('✅ Password changed successfully!', true);
 }
 let currentRepairTab = 'active';
 let currentFinanceTab = 'overview';
@@ -1216,7 +1419,8 @@ const pageTitles = {
   dashboard: 'Dashboard', repairs: 'PC Repair Management',
   delivered: 'Delivered Tickets', thesis: 'Research & Thesis',
   inventory: 'Inventory', finance: 'Finance', customer: '🔎 Customer Lookup',
-  earnings: '💵 My Earnings Tracker'
+  earnings: '💵 My Earnings Tracker',
+  sales: '🧾 Sales History'
 };
 
 function showPage(id) {
@@ -1233,6 +1437,7 @@ function showPage(id) {
   if (id === 'delivered') renderDelivered();
   if (id === 'thesis') renderThesis();
   if (id === 'inventory') renderInventory();
+  if (id === 'sales') renderSalesHistory();
   if (id === 'finance') renderFinance();
   if (id === 'customer') { document.getElementById('customerLookupInput').value=''; document.getElementById('customerLookupResults').innerHTML=''; }
   if (id === 'earnings') renderEarningsTracker();
@@ -2147,37 +2352,407 @@ function deleteInventory(id) {
   });
 }
 
+function getProductInsight(productId) {
+  const sales = DB.get('sales');
+  const now = Date.now();
+  const weekAgo = now - 7 * 86400000;
+  const monthAgo = now - 30 * 86400000;
+  const weeklySales = sales.filter(s => s.productId === productId && new Date(s.date).getTime() > weekAgo);
+  const monthlySales = sales.filter(s => s.productId === productId && new Date(s.date).getTime() > monthAgo);
+  const weeklyQty = weeklySales.reduce((s, x) => s + x.qty, 0);
+  const monthlyQty = monthlySales.reduce((s, x) => s + x.qty, 0);
+  return { weeklyQty, monthlyQty };
+}
+
 function renderInventory() {
   const inv = DB.get('inventory');
   const totalVal = inv.reduce((s, p) => s + p.qty * p.buyPrice, 0);
   const sellVal = inv.reduce((s, p) => s + p.qty * p.sellPrice, 0);
   const lowCount = inv.filter(p => p.qty <= p.lowAlert).length;
+  const sales = DB.get('sales');
+  const todaySales = sales.filter(s => s.date === today()).reduce((sum, s) => sum + s.total, 0);
+
   document.getElementById('inventoryStats').innerHTML = `
     <div class="finance-card"><div class="fc-label">Total Products</div><div class="fc-val" style="font-size:1.4rem">${inv.length}</div></div>
     <div class="finance-card expense"><div class="fc-label">Stock Value (Cost)</div><div class="fc-val" style="font-size:1.1rem">${fmtMoney(totalVal)}</div></div>
     <div class="finance-card income"><div class="fc-label">Stock Value (Sell)</div><div class="fc-val" style="font-size:1.1rem">${fmtMoney(sellVal)}</div></div>
     <div class="finance-card ${lowCount > 0 ? 'expense' : ''}"><div class="fc-label">Low Stock Alerts</div><div class="fc-val" style="font-size:1.4rem">${lowCount}</div></div>
+    <div class="finance-card income"><div class="fc-label">Today's Sales</div><div class="fc-val" style="font-size:1.1rem">${fmtMoney(todaySales)}</div></div>
   `;
+
+  // Smart insights
+  const insights = [];
+  inv.forEach(p => {
+    const { weeklyQty, monthlyQty } = getProductInsight(p.id);
+    if (weeklyQty >= 3) {
+      if (p.qty <= p.lowAlert) {
+        insights.push({ type: 'urgent', msg: `⚠️ <strong>${p.name}</strong> is a fast seller (${weeklyQty}/week) but running LOW — restock urgently!` });
+      } else {
+        insights.push({ type: 'good', msg: `🔥 <strong>${p.name}</strong> is selling fast (${weeklyQty}/week) — consider restocking soon.` });
+      }
+    } else if (monthlyQty === 0 && p.qty > 0) {
+      insights.push({ type: 'slow', msg: `🐌 <strong>${p.name}</strong> hasn't sold in 30 days — not recommended to restock.` });
+    } else if (monthlyQty <= 1 && p.qty > 3) {
+      insights.push({ type: 'slow', msg: `📉 <strong>${p.name}</strong> sells slowly (${monthlyQty}/month) — don't over-restock.` });
+    }
+  });
+
+  const insightEl = document.getElementById('inventoryInsights');
+  if (insights.length) {
+    insightEl.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:4px;">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text2);margin-bottom:10px;">💡 Smart Insights</div>
+      ${insights.map(i => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem;color:${i.type==='urgent'?'var(--red)':i.type==='good'?'var(--orange)':'var(--text2)'};line-height:1.4;">${i.msg}</div>`).join('')}
+    </div>`;
+  } else {
+    insightEl.innerHTML = '';
+  }
+
   if (!inv.length) {
     document.getElementById('inventoryContainer').innerHTML = `<div class="no-data"><div class="nd-icon">📦</div><p>No products in inventory.</p></div>`;
     return;
   }
   document.getElementById('inventoryContainer').innerHTML = `<div class="table-wrap"><table class="tbl">
-    <thead><tr><th>Product</th><th>Category</th><th>Supplier</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>${inv.map(p => `<tr>
-      <td><div style="font-weight:600">${p.name}</div><div style="font-size:0.75rem;color:var(--text3)">${p.notes||''}</div></td>
-      <td><span class="chip">${p.category||'—'}</span></td>
-      <td>${p.supplier||'—'}</td>
-      <td style="font-weight:700;${p.qty <= p.lowAlert ? 'color:var(--red)' : ''}">${p.qty}</td>
-      <td>${fmtMoney(p.buyPrice)}</td>
-      <td class="color-green fw-bold">${fmtMoney(p.sellPrice)}</td>
-      <td>${p.qty <= p.lowAlert ? `<span class="badge badge-low">⚠️ Low</span>` : `<span class="badge badge-ok">OK</span>`}</td>
+    <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Buy Price</th><th>Sell Price</th><th>This Week</th><th>Status / Insight</th><th>Actions</th></tr></thead>
+    <tbody>${inv.map(p => {
+      const { weeklyQty } = getProductInsight(p.id);
+      const isLow = p.qty <= p.lowAlert;
+      const isFast = weeklyQty >= 3;
+      const statusBadgeInv = isLow
+        ? `<span class="badge badge-urgent">⚠️ Low Stock</span>`
+        : `<span class="badge badge-ontrack">✅ OK</span>`;
+      const insightBadge = isFast
+        ? `<span class="badge badge-inprogress" style="margin-left:4px;">🔥 Fast</span>`
+        : weeklyQty === 0 ? `<span style="font-size:0.72rem;color:var(--text3);">No sales</span>` : '';
+      return `<tr>
+        <td><div style="font-weight:600">${p.name}</div><div style="font-size:0.72rem;color:var(--text3)">${p.category||'—'}</div></td>
+        <td><span class="chip">${p.category||'—'}</span></td>
+        <td style="font-weight:700;${isLow?'color:var(--red)':''}">${p.qty}</td>
+        <td>${fmtMoney(p.buyPrice)}</td>
+        <td class="color-green fw-bold">${fmtMoney(p.sellPrice)}</td>
+        <td style="font-size:0.85rem;">${weeklyQty > 0 ? `<span style="color:var(--orange);font-weight:600;">${weeklyQty} sold</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+        <td>${statusBadgeInv} ${insightBadge}</td>
+        <td><div class="tbl-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openSaleConfirmDirect('${p.id}')">💰 Sell</button>
+          <button class="btn btn-ghost btn-sm" onclick="showProductQr('${p.id}')">🔳 QR</button>
+          <button class="btn btn-ghost btn-sm" onclick="openInventoryModal('${p.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteInventory('${p.id}')">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ========================================================
+//  SALES SYSTEM
+// ========================================================
+let _saleProduct = null;
+let _saleStream = null;
+let _saleAnimFrame = null;
+
+// ── SALE SCANNER ─────────────────────────────────────────
+async function openSaleScanner() {
+  if (!('BarcodeDetector' in window)) { toast('QR scanning requires Chrome.', 'warn'); return; }
+  openModal('saleScannerModal');
+  try {
+    const detector = new BarcodeDetector({ formats: ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e','data_matrix'] });
+    _saleStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('saleVideo');
+    video.srcObject = _saleStream;
+    await video.play();
+    async function loop() {
+      if (!_saleStream) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length) { closeSaleScanner(); handleProductScan(codes[0].rawValue.trim()); return; }
+      } catch(e) {}
+      _saleAnimFrame = requestAnimationFrame(loop);
+    }
+    _saleAnimFrame = requestAnimationFrame(loop);
+  } catch(e) { document.getElementById('saleScanMsg').textContent = 'Camera access denied.'; }
+}
+
+function closeSaleScanner() {
+  if (_saleAnimFrame) { cancelAnimationFrame(_saleAnimFrame); _saleAnimFrame = null; }
+  if (_saleStream) { _saleStream.getTracks().forEach(t => t.stop()); _saleStream = null; }
+  const v = document.getElementById('saleVideo');
+  if (v) v.srcObject = null;
+  closeModal('saleScannerModal');
+}
+
+function handleProductScan(value) {
+  // value is product ID (from generated QR) or external barcode
+  const inv = DB.get('inventory');
+  const product = inv.find(p => p.id === value || p.barcode === value);
+  if (!product) {
+    toast(`No product found for: ${value}`, 'warn');
+    return;
+  }
+  openSaleConfirm(product);
+}
+
+function openSaleConfirmDirect(productId) {
+  const product = DB.get('inventory').find(p => p.id === productId);
+  if (product) openSaleConfirm(product);
+}
+
+function openSaleConfirm(product) {
+  _saleProduct = product;
+  document.getElementById('saleConfirmProduct').innerHTML = `
+    <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${product.name}</div>
+    <div style="font-size:0.82rem;color:var(--text2);">Category: ${product.category||'—'} &nbsp;|&nbsp; In stock: <strong>${product.qty}</strong></div>
+    <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;">Default price: <strong style="color:var(--green)">${fmtMoney(product.sellPrice)}</strong></div>
+  `;
+  document.getElementById('sale_qty').value = 1;
+  document.getElementById('sale_price').value = product.sellPrice || '';
+  document.getElementById('sale_buyer').value = '';
+  document.getElementById('sale_note').value = '';
+  updateSaleTotal();
+  openModal('saleConfirmModal');
+}
+
+function updateSaleTotal() {
+  const qty = parseFloat(document.getElementById('sale_qty').value) || 0;
+  const price = parseFloat(document.getElementById('sale_price').value) || 0;
+  document.getElementById('sale_total').value = (qty * price).toFixed(0);
+}
+
+function confirmSale(andPrint = false) {
+  const qty = parseInt(document.getElementById('sale_qty').value) || 1;
+  const price = parseFloat(document.getElementById('sale_price').value) || 0;
+  const buyer = document.getElementById('sale_buyer').value.trim();
+  const note = document.getElementById('sale_note').value.trim();
+  if (!_saleProduct) return;
+  if (_saleProduct.qty < qty) { toast(`Only ${_saleProduct.qty} in stock!`, 'warn'); return; }
+
+  const saleRecord = {
+    id: uid(), productId: _saleProduct.id, productName: _saleProduct.name,
+    category: _saleProduct.category || '', qty, priceEach: price,
+    total: qty * price, buyer, note, date: today(),
+    createdAt: new Date().toISOString()
+  };
+  DB.setOne('sales', saleRecord);
+
+  // Reduce stock
+  _saleProduct.qty -= qty;
+  DB.setOne('inventory', _saleProduct);
+
+  // Record income
+  addAutoTxn('income', qty * price, 'Product Sale', `${_saleProduct.name}${buyer ? ' – '+buyer : ''}`);
+
+  closeModal('saleConfirmModal');
+  toast(`✅ Sold ${qty}x ${_saleProduct.name} for ${fmtMoney(qty * price)}`, 'success');
+
+  if (andPrint) printSaleReceipt(saleRecord, _saleProduct);
+  _saleProduct = null;
+}
+
+function confirmSaleAndPrint() { confirmSale(true); }
+
+// ── MANUAL SALE ───────────────────────────────────────────
+function openManualSaleModal() {
+  const inv = DB.get('inventory').filter(p => p.qty > 0);
+  const sel = document.getElementById('msale_product');
+  sel.innerHTML = '<option value="">— Select product —</option>' +
+    inv.map(p => `<option value="${p.id}">${p.name} (${p.qty} in stock)</option>`).join('');
+  document.getElementById('msale_qty').value = 1;
+  document.getElementById('msale_price').value = '';
+  document.getElementById('msale_buyer').value = '';
+  document.getElementById('msale_note').value = '';
+  document.getElementById('msale_total').value = '';
+  openModal('manualSaleModal');
+}
+
+function onManualProductChange() {
+  const id = document.getElementById('msale_product').value;
+  const p = DB.get('inventory').find(x => x.id === id);
+  if (p) { document.getElementById('msale_price').value = p.sellPrice || ''; updateManualSaleTotal(); }
+}
+
+function updateManualSaleTotal() {
+  const qty = parseFloat(document.getElementById('msale_qty').value) || 0;
+  const price = parseFloat(document.getElementById('msale_price').value) || 0;
+  document.getElementById('msale_total').value = (qty * price).toFixed(0);
+}
+
+function saveManualSale(andPrint = false) {
+  const pid = document.getElementById('msale_product').value;
+  const qty = parseInt(document.getElementById('msale_qty').value) || 1;
+  const price = parseFloat(document.getElementById('msale_price').value) || 0;
+  const buyer = document.getElementById('msale_buyer').value.trim();
+  const note = document.getElementById('msale_note').value.trim();
+  if (!pid) { toast('Select a product.', 'warn'); return; }
+  const inv = DB.get('inventory');
+  const p = inv.find(x => x.id === pid);
+  if (!p) return;
+  if (p.qty < qty) { toast(`Only ${p.qty} in stock!`, 'warn'); return; }
+
+  const saleRecord = {
+    id: uid(), productId: p.id, productName: p.name,
+    category: p.category || '', qty, priceEach: price,
+    total: qty * price, buyer, note, date: today(),
+    createdAt: new Date().toISOString()
+  };
+  DB.setOne('sales', saleRecord);
+  p.qty -= qty;
+  DB.setOne('inventory', p);
+  addAutoTxn('income', qty * price, 'Product Sale', `${p.name}${buyer ? ' – '+buyer : ''}`);
+  closeModal('manualSaleModal');
+  toast(`✅ Sold ${qty}x ${p.name} for ${fmtMoney(qty * price)}`, 'success');
+  if (andPrint) printSaleReceipt(saleRecord, p);
+}
+
+function saveManualSaleAndPrint() { saveManualSale(true); }
+
+// ── PRODUCT QR GENERATOR ──────────────────────────────────
+function showProductQr(productId) {
+  const p = DB.get('inventory').find(x => x.id === productId);
+  if (!p) return;
+  document.getElementById('genQrProductName').textContent = p.name;
+  document.getElementById('genQrProductId').textContent = p.id;
+  const el = document.getElementById('genQrCode');
+  el.innerHTML = '';
+  if (typeof qrcode !== 'undefined') {
+    const qr = qrcode(0, 'M');
+    qr.addData(p.id);
+    qr.make();
+    el.innerHTML = qr.createImgTag(4, 4);
+  }
+  openModal('genQrModal');
+}
+
+function printProductQr() {
+  const name = document.getElementById('genQrProductName').textContent;
+  const pid = document.getElementById('genQrProductId').textContent;
+  const win = window.open('', '_blank', 'width=400,height=500');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR – ${name}</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Courier New',monospace; display:flex; flex-wrap:wrap; gap:8mm; padding:4mm; }
+    .label { width:60mm; border:1px solid #ccc; border-radius:4px; padding:6px 8px; text-align:center; page-break-inside:avoid; }
+    .lname { font-size:9pt; font-weight:700; margin-bottom:4px; }
+    .lid { font-size:6.5pt; color:#666; margin-top:3px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"><\/script>
+  </head><body>
+  ${Array(12).fill(0).map((_,i) => `<div class="label">
+    <div class="lname">${name}</div>
+    <div id="qr${i}"></div>
+    <div class="lid">${pid}</div>
+  </div>`).join('')}
+  <script>
+    window.onload = () => {
+      for(let i=0;i<12;i++){
+        const qr = qrcode(0,'M'); qr.addData('${pid}'); qr.make();
+        document.getElementById('qr'+i).innerHTML = qr.createImgTag(3,3);
+      }
+      setTimeout(()=>window.print(), 400);
+    };
+  <\/script></body></html>`);
+  win.document.close();
+}
+
+// ── SALES RECEIPT ─────────────────────────────────────────
+function printSaleReceipt(sale, product) {
+  const shopName = localStorage.getItem('fd_shop_name') || 'Tech House';
+  const shopPhone = localStorage.getItem('fd_shop_phone') || '';
+  const logoUrl = 'https://teechouse.github.io/fixdesk/logo.png';
+  const win = window.open('', '_blank', 'width=460,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt</title>
+  <style>
+    @page { size: 80mm auto; margin: 4mm; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Courier New',monospace; font-size:9pt; color:#111; background:#fff; width:72mm; padding:4mm; }
+    .center { text-align:center; }
+    .logo { width:60px; height:60px; object-fit:contain; }
+    .shop-name { font-size:13pt; font-weight:900; margin:4px 0 1px; letter-spacing:0.5px; }
+    .shop-sub { font-size:7pt; color:#555; }
+    .divider { border:none; border-top:1px dashed #bbb; margin:6px 0; }
+    .section { font-size:7pt; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#888; margin:5px 0 2px; }
+    table { width:100%; border-collapse:collapse; }
+    td { padding:2px 1px; font-size:8.5pt; vertical-align:top; }
+    .total-row td { font-size:10pt; font-weight:900; border-top:1px solid #222; padding-top:5px; }
+    .footer { text-align:center; font-size:7pt; color:#666; margin-top:8px; }
+    .badge { display:inline-block; background:#111; color:#fff; font-size:7pt; padding:2px 6px; border-radius:3px; margin-top:4px; }
+  </style></head><body>
+  <div class="center">
+    <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
+    <div class="shop-name">${shopName}</div>
+    ${shopPhone ? `<div class="shop-sub">📞 ${shopPhone}</div>` : ''}
+    <div class="shop-sub">Sales Receipt</div>
+  </div>
+  <hr class="divider">
+  <div style="font-size:7.5pt;color:#555;">Date: ${sale.date} &nbsp;|&nbsp; Ref: ${sale.id.substring(0,8).toUpperCase()}</div>
+  ${sale.buyer ? `<div style="font-size:7.5pt;color:#555;">Buyer: ${sale.buyer}</div>` : ''}
+  <hr class="divider">
+  <div class="section">Items</div>
+  <table>
+    <tr>
+      <td style="width:50%;font-weight:600;">${sale.productName}</td>
+      <td style="text-align:center;">${sale.qty}x</td>
+      <td style="text-align:right;">${fmtMoney(sale.priceEach)}</td>
+    </tr>
+    ${sale.note ? `<tr><td colspan="3" style="font-size:7.5pt;color:#888;">${sale.note}</td></tr>` : ''}
+    <tr class="total-row">
+      <td colspan="2">TOTAL</td>
+      <td style="text-align:right;">${fmtMoney(sale.total)}</td>
+    </tr>
+  </table>
+  <div class="footer">Thank you for shopping at ${shopName}!<br>Come back soon 😊</div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── SALES HISTORY RENDER ──────────────────────────────────
+function renderSalesHistory() {
+  const sales = DB.get('sales').sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const todayTotal = sales.filter(s => s.date === today()).reduce((sum,s) => sum+s.total, 0);
+  const weekTotal = sales.filter(s => Date.now()-new Date(s.createdAt) < 7*86400000).reduce((sum,s) => sum+s.total, 0);
+  const monthTotal = sales.filter(s => Date.now()-new Date(s.createdAt) < 30*86400000).reduce((sum,s) => sum+s.total, 0);
+
+  document.getElementById('salesStatsRow').innerHTML = `
+    <div class="finance-card income"><div class="fc-label">Today</div><div class="fc-val">${fmtMoney(todayTotal)}</div></div>
+    <div class="finance-card income"><div class="fc-label">This Week</div><div class="fc-val">${fmtMoney(weekTotal)}</div></div>
+    <div class="finance-card income"><div class="fc-label">This Month</div><div class="fc-val">${fmtMoney(monthTotal)}</div></div>
+    <div class="finance-card"><div class="fc-label">Total Transactions</div><div class="fc-val">${sales.length}</div></div>
+  `;
+
+  const container = document.getElementById('salesContainer');
+  if (!sales.length) {
+    container.innerHTML = `<div class="no-data"><div class="nd-icon">🧾</div><p>No sales recorded yet.</p></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="table-wrap"><table class="tbl">
+    <thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Price Each</th><th>Total</th><th>Buyer</th><th>Note</th><th>Actions</th></tr></thead>
+    <tbody>${sales.map(s => `<tr>
+      <td style="font-size:0.8rem">${fmtDate(s.date)}</td>
+      <td><div style="font-weight:600">${s.productName}</div><div style="font-size:0.72rem;color:var(--text3)">${s.category||''}</div></td>
+      <td style="font-weight:700">${s.qty}</td>
+      <td>${fmtMoney(s.priceEach)}</td>
+      <td class="color-green fw-bold">${fmtMoney(s.total)}</td>
+      <td style="font-size:0.82rem">${s.buyer||'—'}</td>
+      <td style="font-size:0.8rem;color:var(--text2)">${s.note||'—'}</td>
       <td><div class="tbl-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openInventoryModal('${p.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteInventory('${p.id}')">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick="printSaleReceiptById('${s.id}')">🖨️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSale('${s.id}')">🗑</button>
       </div></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+}
+
+function printSaleReceiptById(saleId) {
+  const sale = DB.get('sales').find(s => s.id === saleId);
+  if (!sale) return;
+  const product = DB.get('inventory').find(p => p.id === sale.productId) || { name: sale.productName };
+  printSaleReceipt(sale, product);
+}
+
+function deleteSale(id) {
+  openConfirm('Delete Sale', 'Delete this sale record? Stock will NOT be restored.', () => {
+    DB.deleteOne('sales', id).then(() => toast('Sale deleted.', 'warn'));
+    closeModal('confirmModal');
+  });
 }
 
 // ========================================================
@@ -2784,6 +3359,7 @@ window.doLogin = doLogin;
 window.doLogout = doLogout;
 window.openShopSettings = openShopSettings;
 window.saveShopSettings = saveShopSettings;
+window.changePassword = changePassword;
 window.openRepairModal = openRepairModal;
 window.saveRepair = saveRepair;
 window.viewRepair = viewRepair;
@@ -2812,6 +3388,22 @@ window.saveInventory = saveInventory;
 window.deleteInventory = deleteInventory;
 window.openAdjustModal = openAdjustModal;
 window.saveAdjust = saveAdjust;
+window.openSaleScanner = openSaleScanner;
+window.closeSaleScanner = closeSaleScanner;
+window.openSaleConfirmDirect = openSaleConfirmDirect;
+window.confirmSale = confirmSale;
+window.confirmSaleAndPrint = confirmSaleAndPrint;
+window.updateSaleTotal = updateSaleTotal;
+window.openManualSaleModal = openManualSaleModal;
+window.onManualProductChange = onManualProductChange;
+window.updateManualSaleTotal = updateManualSaleTotal;
+window.saveManualSale = saveManualSale;
+window.saveManualSaleAndPrint = saveManualSaleAndPrint;
+window.showProductQr = showProductQr;
+window.printProductQr = printProductQr;
+window.printSaleReceiptById = printSaleReceiptById;
+window.deleteSale = deleteSale;
+window.renderSalesHistory = renderSalesHistory;
 window.setFinanceTab = setFinanceTab;
 window.openTxnModal = openTxnModal;
 window.saveTxn = saveTxn;
