@@ -572,7 +572,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
           <div class="sec-title">📦 Inventory</div>
           <div class="sec-actions">
             <button class="btn btn-ghost" onclick="openSaleScanner()">📷 Scan Sale</button>
-            <button class="btn btn-ghost" onclick="openAdjustModal()">± Adjust Stock</button>
+            <button class="btn btn-ghost" onclick="openRestockScanner()">📦 Scan Restock</button>
+            <button class="btn btn-ghost" onclick="openAddByScanner()">➕ Scan New Product</button>
             <button class="btn btn-ghost" onclick="showPage('sales')">🧾 Sales History</button>
             <button class="btn btn-primary" onclick="openInventoryModal()">＋ Add Product</button>
           </div>
@@ -1057,6 +1058,104 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div class="modal-footer" style="justify-content:center;">
       <button class="btn btn-ghost" onclick="closeModal('genQrModal')">Close</button>
       <button class="btn btn-primary" onclick="printProductQr()">🖨️ Print QR</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESTOCK SCANNER MODAL -->
+<div class="modal-overlay" id="restockScanModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">📦 Scan to Restock</div>
+      <button class="modal-close" onclick="closeRestockScanner()">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div style="position:relative;background:#000;min-height:250px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <video id="restockVideo" style="width:100%;max-height:280px;object-fit:cover;display:block;" playsinline autoplay muted></video>
+        <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+          <div style="width:180px;height:180px;position:relative;">
+            <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:3px solid #2ecc71;border-left:3px solid #2ecc71;border-radius:3px 0 0 0;"></div>
+            <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:3px solid #2ecc71;border-right:3px solid #2ecc71;border-radius:0 3px 0 0;"></div>
+            <div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:3px solid #2ecc71;border-left:3px solid #2ecc71;border-radius:0 0 0 3px;"></div>
+            <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:3px solid #2ecc71;border-right:3px solid #2ecc71;border-radius:0 0 3px 0;"></div>
+          </div>
+        </div>
+        <div id="restockScanMsg" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:0.78rem;background:rgba(0,0,0,0.5);padding:4px;">Point camera at product QR/barcode</div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-ghost" onclick="closeRestockScanner()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESTOCK CONFIRM MODAL -->
+<div class="modal-overlay" id="restockConfirmModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">📦 Restock Product</div>
+      <button class="modal-close" onclick="closeModal('restockConfirmModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="restockProductInfo" style="background:var(--bg3);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.9rem;"></div>
+      <div class="form-group">
+        <label>Quantity to Add *</label>
+        <input type="number" id="restock_qty" placeholder="e.g. 10" min="1" style="font-size:1.1rem;font-weight:700;">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>New Buy Price (DZD) — leave blank to keep current</label>
+        <input type="number" id="restock_buyprice" placeholder="Optional">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Supplier (optional)</label>
+        <input type="text" id="restock_supplier" placeholder="Where did you buy from?">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('restockConfirmModal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmRestock()">✅ Add Stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD NEW PRODUCT BY SCAN MODAL -->
+<div class="modal-overlay" id="addByScanModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">➕ Scan New Product</div>
+      <button class="modal-close" onclick="closeAddByScanner()">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div id="addScanVideoWrap" style="position:relative;background:#000;min-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <video id="addScanVideo" style="width:100%;max-height:250px;object-fit:cover;display:block;" playsinline autoplay muted></video>
+        <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+          <div style="width:180px;height:180px;position:relative;">
+            <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:3px solid #4af;border-left:3px solid #4af;border-radius:3px 0 0 0;"></div>
+            <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:3px solid #4af;border-right:3px solid #4af;border-radius:0 3px 0 0;"></div>
+            <div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:3px solid #4af;border-left:3px solid #4af;border-radius:0 0 0 3px;"></div>
+            <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:3px solid #4af;border-right:3px solid #4af;border-radius:0 0 3px 0;"></div>
+          </div>
+        </div>
+        <div id="addScanMsg" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:0.78rem;background:rgba(0,0,0,0.5);padding:4px;">Scan the product's QR or barcode</div>
+      </div>
+      <div id="addScanFormWrap" style="display:none;padding:16px;">
+        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px;padding:8px;background:var(--bg3);border-radius:6px;">
+          Scanned code: <strong id="addScanCodeDisplay" style="font-family:var(--mono)"></strong>
+        </div>
+        <div class="form-grid">
+          <div class="form-group form-full"><label>Product Name *</label><input type="text" id="ascan_name" placeholder="e.g. USB Flash Drive 32GB"></div>
+          <div class="form-group"><label>Category</label><input type="text" id="ascan_cat" placeholder="e.g. Storage, Cable…"></div>
+          <div class="form-group"><label>Quantity *</label><input type="number" id="ascan_qty" placeholder="0" min="0"></div>
+          <div class="form-group"><label>Buy Price (DZD)</label><input type="number" id="ascan_buy" placeholder="0"></div>
+          <div class="form-group"><label>Sell Price (DZD)</label><input type="number" id="ascan_sell" placeholder="0"></div>
+          <div class="form-group"><label>Low Stock Alert At</label><input type="number" id="ascan_low" placeholder="2" min="0"></div>
+          <div class="form-group"><label>Supplier</label><input type="text" id="ascan_supplier" placeholder="Supplier name"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" id="addScanFooter">
+      <button class="btn btn-ghost" onclick="closeAddByScanner()">Cancel</button>
+      <button class="btn btn-primary" id="addScanSaveBtn" style="display:none" onclick="saveProductByBarcode()">✅ Save Product</button>
     </div>
   </div>
 </div>
@@ -2480,7 +2579,6 @@ function closeSaleScanner() {
 }
 
 function handleProductScan(value) {
-  // value is product ID (from generated QR) or external barcode
   const inv = DB.get('inventory');
   const product = inv.find(p => p.id === value || p.barcode === value);
   if (!product) {
@@ -2488,6 +2586,35 @@ function handleProductScan(value) {
     return;
   }
   openSaleConfirm(product);
+}
+
+function handleRestockScan(value) {
+  const inv = DB.get('inventory');
+  const product = inv.find(p => p.id === value || p.barcode === value);
+  if (!product) {
+    toast(`Product not found for code: ${value}. Use "Scan New Product" to add it.`, 'warn');
+    return;
+  }
+  openRestockConfirm(product);
+}
+
+function handleAddByScan(value) {
+  const inv = DB.get('inventory');
+  const existing = inv.find(p => p.id === value || p.barcode === value);
+  if (existing) {
+    // Already exists — offer to restock instead
+    toast(`Product already exists: ${existing.name}`, 'info');
+    closeAddByScanner();
+    setTimeout(() => openRestockConfirm(existing), 400);
+    return;
+  }
+  // New product — show the form
+  _addScanBarcode = value;
+  document.getElementById('addScanCodeDisplay').textContent = value;
+  document.getElementById('addScanVideoWrap').style.display = 'none';
+  document.getElementById('addScanFormWrap').style.display = 'block';
+  document.getElementById('addScanSaveBtn').style.display = 'inline-flex';
+  document.getElementById('addScanMsg').textContent = 'Fill in product details';
 }
 
 function openSaleConfirmDirect(productId) {
@@ -2727,14 +2854,20 @@ function renderSalesHistory() {
     <thead><tr><th>Date</th><th>Product</th><th>Qty</th><th>Price Each</th><th>Total</th><th>Buyer</th><th>Note</th><th>Actions</th></tr></thead>
     <tbody>${sales.map(s => `<tr>
       <td style="font-size:0.8rem">${fmtDate(s.date)}</td>
-      <td><div style="font-weight:600">${s.productName}</div><div style="font-size:0.72rem;color:var(--text3)">${s.category||''}</div></td>
-      <td style="font-weight:700">${s.qty}</td>
+      <td>
+        <div style="font-weight:600;${s.returned?'text-decoration:line-through;color:var(--text3)':''}">${s.productName}</div>
+        <div style="font-size:0.72rem;color:var(--text3)">${s.category||''}${s.returned?' • <span style="color:var(--red)">↩️ Returned</span>':''}</div>
+      </td>
+      <td style="font-weight:700;${s.returned?'color:var(--text3)':''}">${s.qty}</td>
       <td>${fmtMoney(s.priceEach)}</td>
-      <td class="color-green fw-bold">${fmtMoney(s.total)}</td>
+      <td class="${s.returned?'':'color-green fw-bold'}" style="${s.returned?'color:var(--text3);text-decoration:line-through;':''}">
+        ${fmtMoney(s.total)}
+      </td>
       <td style="font-size:0.82rem">${s.buyer||'—'}</td>
       <td style="font-size:0.8rem;color:var(--text2)">${s.note||'—'}</td>
       <td><div class="tbl-actions">
         <button class="btn btn-ghost btn-sm" onclick="printSaleReceiptById('${s.id}')">🖨️</button>
+        ${!s.returned ? `<button class="btn btn-warn btn-sm" onclick="returnSale('${s.id}')">↩️ Return</button>` : '<span style="font-size:0.72rem;color:var(--text3);">Returned</span>'}
         <button class="btn btn-danger btn-sm" onclick="deleteSale('${s.id}')">🗑</button>
       </div></td>
     </tr>`).join('')}</tbody>
@@ -2753,6 +2886,167 @@ function deleteSale(id) {
     DB.deleteOne('sales', id).then(() => toast('Sale deleted.', 'warn'));
     closeModal('confirmModal');
   });
+}
+
+// ── RETURN / CANCEL A SALE ────────────────────────────────
+function returnSale(id) {
+  const sale = DB.get('sales').find(s => s.id === id);
+  if (!sale) return;
+  openConfirm(
+    '↩️ Return / Cancel Sale',
+    `Return ${sale.qty}x "${sale.productName}"? This will restore the stock and mark the sale as returned.`,
+    () => {
+      // Restore stock
+      const inv = DB.get('inventory');
+      const product = inv.find(p => p.id === sale.productId);
+      if (product) {
+        product.qty += sale.qty;
+        DB.setOne('inventory', product);
+      }
+      // Mark sale as returned (don't delete — keep record)
+      sale.returned = true;
+      sale.returnedAt = new Date().toISOString();
+      DB.setOne('sales', sale);
+      // Record as expense to cancel the income
+      addAutoTxn('expense', sale.total, 'Product Return', `Return: ${sale.productName}`);
+      closeModal('confirmModal');
+      toast(`↩️ Sale returned. ${sale.qty}x ${sale.productName} restored to stock.`, 'info');
+    }
+  );
+}
+
+// ── RESTOCK SCANNER ───────────────────────────────────────
+let _restockProduct = null;
+let _restockStream = null;
+let _restockAnimFrame = null;
+
+async function openRestockScanner() {
+  if (!('BarcodeDetector' in window)) { toast('QR scanning requires Chrome.', 'warn'); return; }
+  openModal('restockScanModal');
+  try {
+    const detector = new BarcodeDetector({ formats: ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e','data_matrix'] });
+    _restockStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('restockVideo');
+    video.srcObject = _restockStream;
+    await video.play();
+    async function loop() {
+      if (!_restockStream) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length) { closeRestockScanner(); handleRestockScan(codes[0].rawValue.trim()); return; }
+      } catch(e) {}
+      _restockAnimFrame = requestAnimationFrame(loop);
+    }
+    _restockAnimFrame = requestAnimationFrame(loop);
+  } catch(e) { document.getElementById('restockScanMsg').textContent = 'Camera access denied.'; }
+}
+
+function closeRestockScanner() {
+  if (_restockAnimFrame) { cancelAnimationFrame(_restockAnimFrame); _restockAnimFrame = null; }
+  if (_restockStream) { _restockStream.getTracks().forEach(t => t.stop()); _restockStream = null; }
+  const v = document.getElementById('restockVideo');
+  if (v) v.srcObject = null;
+  closeModal('restockScanModal');
+}
+
+function openRestockConfirm(product) {
+  _restockProduct = product;
+  document.getElementById('restockProductInfo').innerHTML = `
+    <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${product.name}</div>
+    <div style="font-size:0.82rem;color:var(--text2);">Current stock: <strong style="color:var(--accent)">${product.qty}</strong> &nbsp;|&nbsp; Category: ${product.category||'—'}</div>
+    <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;">Buy price: ${fmtMoney(product.buyPrice)} &nbsp;|&nbsp; Sell price: <strong style="color:var(--green)">${fmtMoney(product.sellPrice)}</strong></div>
+  `;
+  document.getElementById('restock_qty').value = '';
+  document.getElementById('restock_buyprice').value = '';
+  document.getElementById('restock_supplier').value = product.supplier || '';
+  openModal('restockConfirmModal');
+}
+
+function confirmRestock() {
+  const qty = parseInt(document.getElementById('restock_qty').value) || 0;
+  const newBuyPrice = parseFloat(document.getElementById('restock_buyprice').value);
+  const supplier = document.getElementById('restock_supplier').value.trim();
+  if (!qty || qty < 1) { toast('Enter a valid quantity.', 'warn'); return; }
+  if (!_restockProduct) return;
+  _restockProduct.qty += qty;
+  if (!isNaN(newBuyPrice) && newBuyPrice > 0) _restockProduct.buyPrice = newBuyPrice;
+  if (supplier) _restockProduct.supplier = supplier;
+  DB.setOne('inventory', _restockProduct).then(() => {
+    toast(`✅ Added ${qty} units to ${_restockProduct.name}. New stock: ${_restockProduct.qty}`, 'success');
+  });
+  // Record as expense (you spent money to restock)
+  const cost = qty * (_restockProduct.buyPrice || 0);
+  if (cost > 0) addAutoTxn('expense', cost, 'Restock', `Restock: ${_restockProduct.name} x${qty}`);
+  closeModal('restockConfirmModal');
+  _restockProduct = null;
+}
+
+// ── ADD PRODUCT BY SCANNING BARCODE ──────────────────────
+let _addScanStream = null;
+let _addScanAnimFrame = null;
+let _addScanBarcode = null;
+
+async function openAddByScanner() {
+  if (!('BarcodeDetector' in window)) { toast('QR scanning requires Chrome.', 'warn'); return; }
+  // Reset form
+  _addScanBarcode = null;
+  document.getElementById('addScanVideoWrap').style.display = 'flex';
+  document.getElementById('addScanFormWrap').style.display = 'none';
+  document.getElementById('addScanSaveBtn').style.display = 'none';
+  ['ascan_name','ascan_cat','ascan_qty','ascan_buy','ascan_sell','ascan_low','ascan_supplier'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  openModal('addByScanModal');
+  try {
+    const detector = new BarcodeDetector({ formats: ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e','data_matrix'] });
+    _addScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('addScanVideo');
+    video.srcObject = _addScanStream;
+    await video.play();
+    async function loop() {
+      if (!_addScanStream) return;
+      try {
+        const codes = await detector.detect(video);
+        if (codes.length) {
+          if (_addScanStream) { _addScanStream.getTracks().forEach(t => t.stop()); _addScanStream = null; }
+          if (_addScanAnimFrame) { cancelAnimationFrame(_addScanAnimFrame); _addScanAnimFrame = null; }
+          handleAddByScan(codes[0].rawValue.trim());
+          return;
+        }
+      } catch(e) {}
+      _addScanAnimFrame = requestAnimationFrame(loop);
+    }
+    _addScanAnimFrame = requestAnimationFrame(loop);
+  } catch(e) { document.getElementById('addScanMsg').textContent = 'Camera access denied.'; }
+}
+
+function closeAddByScanner() {
+  if (_addScanAnimFrame) { cancelAnimationFrame(_addScanAnimFrame); _addScanAnimFrame = null; }
+  if (_addScanStream) { _addScanStream.getTracks().forEach(t => t.stop()); _addScanStream = null; }
+  const v = document.getElementById('addScanVideo');
+  if (v) v.srcObject = null;
+  closeModal('addByScanModal');
+}
+
+function saveProductByBarcode() {
+  const name = document.getElementById('ascan_name').value.trim();
+  if (!name) { toast('Product name is required.', 'warn'); return; }
+  const record = {
+    id: uid(),
+    barcode: _addScanBarcode,
+    name,
+    category: document.getElementById('ascan_cat').value.trim(),
+    qty: parseInt(document.getElementById('ascan_qty').value) || 0,
+    buyPrice: parseFloat(document.getElementById('ascan_buy').value) || 0,
+    sellPrice: parseFloat(document.getElementById('ascan_sell').value) || 0,
+    lowAlert: parseInt(document.getElementById('ascan_low').value) || 2,
+    supplier: document.getElementById('ascan_supplier').value.trim(),
+    notes: '',
+    createdAt: new Date().toISOString()
+  };
+  DB.setOne('inventory', record).then(() => toast(`✅ "${name}" added to inventory!`, 'success'));
+  closeAddByScanner();
+  _addScanBarcode = null;
 }
 
 // ========================================================
@@ -3403,7 +3697,15 @@ window.showProductQr = showProductQr;
 window.printProductQr = printProductQr;
 window.printSaleReceiptById = printSaleReceiptById;
 window.deleteSale = deleteSale;
+window.returnSale = returnSale;
 window.renderSalesHistory = renderSalesHistory;
+window.openRestockScanner = openRestockScanner;
+window.closeRestockScanner = closeRestockScanner;
+window.openRestockConfirm = openRestockConfirm;
+window.confirmRestock = confirmRestock;
+window.openAddByScanner = openAddByScanner;
+window.closeAddByScanner = closeAddByScanner;
+window.saveProductByBarcode = saveProductByBarcode;
 window.setFinanceTab = setFinanceTab;
 window.openTxnModal = openTxnModal;
 window.saveTxn = saveTxn;
