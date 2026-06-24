@@ -1149,6 +1149,47 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   </div>
 </div>
 
+<!-- EDIT SALE MODAL -->
+<div class="modal-overlay" id="editSaleModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Sale</div>
+      <button class="modal-close" onclick="closeModal('editSaleModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="editSaleProductInfo" style="background:var(--bg3);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.88rem;color:var(--text2);"></div>
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label>Quantity Sold</label>
+          <input type="number" id="esale_qty" min="1" oninput="updateEditSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Price Each (DZD)</label>
+          <input type="number" id="esale_price" oninput="updateEditSaleTotal()">
+        </div>
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="esale_total" readonly style="font-weight:800;color:var(--green);opacity:1;">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Buyer Name (optional)</label>
+        <input type="text" id="esale_buyer" placeholder="Customer name">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Note (optional)</label>
+        <input type="text" id="esale_note" placeholder="e.g. discounted, bundle…">
+      </div>
+      <div id="editSaleStockWarn" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(245,96,66,0.1);border:1px solid rgba(245,96,66,0.3);border-radius:6px;font-size:0.82rem;color:var(--red);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editSaleModal')">Cancel</button>
+      <button class="btn btn-warn" onclick="returnSaleFromEdit()">↩️ Cancel Sale & Restore Stock</button>
+      <button class="btn btn-primary" onclick="saveEditSale()">✅ Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- RESTOCK SCANNER MODAL -->
 <div class="modal-overlay" id="restockScanModal">
   <div class="modal" style="max-width:400px">
@@ -2985,7 +3026,8 @@ function renderSalesHistory() {
       <td style="font-size:0.8rem;color:var(--text2)">${s.note||'—'}</td>
       <td><div class="tbl-actions">
         <button class="btn btn-ghost btn-sm" onclick="printSaleReceiptById('${s.id}')">🖨️</button>
-        ${!s.returned ? `<button class="btn btn-warn btn-sm" onclick="returnSale('${s.id}')">↩️ Return</button>` : '<span style="font-size:0.72rem;color:var(--text3);">Returned</span>'}
+        ${!s.returned ? `<button class="btn btn-ghost btn-sm" onclick="openEditSale('${s.id}')">✏️ Edit</button>` : ''}
+        ${!s.returned ? `<button class="btn btn-warn btn-sm" onclick="returnSale('${s.id}')">↩️ Return</button>` : '<span style="font-size:0.72rem;color:var(--text3);">↩️ Returned</span>'}
         <button class="btn btn-danger btn-sm" onclick="deleteSale('${s.id}')">🗑</button>
       </div></td>
     </tr>`).join('')}</tbody>
@@ -3004,6 +3046,100 @@ function deleteSale(id) {
     DB.deleteOne('sales', id).then(() => toast('Sale deleted.', 'warn'));
     closeModal('confirmModal');
   });
+}
+
+// ── EDIT SALE ─────────────────────────────────────────────
+let _editSaleId = null;
+
+function openEditSale(id) {
+  const sale = DB.get('sales').find(s => s.id === id);
+  if (!sale) return;
+  if (sale.returned) { toast('Cannot edit a returned sale.', 'warn'); return; }
+  _editSaleId = id;
+  const product = DB.get('inventory').find(p => p.id === sale.productId);
+  document.getElementById('editSaleProductInfo').innerHTML =
+    `<strong>${sale.productName}</strong> &nbsp;|&nbsp; Original: ${sale.qty}x at ${fmtMoney(sale.priceEach)}
+    ${product ? ` &nbsp;|&nbsp; Stock now: <strong>${product.qty}</strong>` : ''}`;
+  document.getElementById('esale_qty').value = sale.qty;
+  document.getElementById('esale_price').value = sale.priceEach;
+  document.getElementById('esale_buyer').value = sale.buyer || '';
+  document.getElementById('esale_note').value = sale.note || '';
+  document.getElementById('editSaleStockWarn').style.display = 'none';
+  updateEditSaleTotal();
+  openModal('editSaleModal');
+}
+
+function updateEditSaleTotal() {
+  const qty = parseFloat(document.getElementById('esale_qty').value) || 0;
+  const price = parseFloat(document.getElementById('esale_price').value) || 0;
+  document.getElementById('esale_total').value = (qty * price).toFixed(0);
+
+  // Warn if new qty > old qty + current stock (not enough stock)
+  const sale = DB.get('sales').find(s => s.id === _editSaleId);
+  const product = sale ? DB.get('inventory').find(p => p.id === sale.productId) : null;
+  const warn = document.getElementById('editSaleStockWarn');
+  if (sale && product) {
+    const extraNeeded = qty - sale.qty; // positive = need more stock
+    if (extraNeeded > product.qty) {
+      warn.style.display = 'block';
+      warn.textContent = `⚠️ You only have ${product.qty} in stock. Increasing qty by ${extraNeeded} is not possible.`;
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+}
+
+function saveEditSale() {
+  const newQty = parseInt(document.getElementById('esale_qty').value) || 0;
+  const newPrice = parseFloat(document.getElementById('esale_price').value) || 0;
+  const newBuyer = document.getElementById('esale_buyer').value.trim();
+  const newNote = document.getElementById('esale_note').value.trim();
+  if (newQty < 1) { toast('Quantity must be at least 1.', 'warn'); return; }
+
+  const sales = DB.get('sales');
+  const sale = sales.find(s => s.id === _editSaleId);
+  if (!sale) return;
+
+  const inv = DB.get('inventory');
+  const product = inv.find(p => p.id === sale.productId);
+
+  // Adjust stock: restore old qty, deduct new qty
+  if (product) {
+    const diff = sale.qty - newQty; // positive = returning stock, negative = taking more
+    if (diff < 0 && Math.abs(diff) > product.qty) {
+      toast(`Not enough stock. Only ${product.qty} available.`, 'warn'); return;
+    }
+    product.qty += diff;
+    DB.setOne('inventory', product);
+  }
+
+  const oldTotal = sale.total;
+  sale.qty = newQty;
+  sale.priceEach = newPrice;
+  sale.total = newQty * newPrice;
+  sale.buyer = newBuyer;
+  sale.note = newNote;
+  sale.editedAt = new Date().toISOString();
+  DB.setOne('sales', sale);
+
+  // Fix income transaction: add correction entry
+  const diff = sale.total - oldTotal;
+  if (diff !== 0) {
+    addAutoTxn(diff > 0 ? 'income' : 'expense', Math.abs(diff), 'Sale Edit', `Edit: ${sale.productName}`);
+  }
+
+  closeModal('editSaleModal');
+  toast('✅ Sale updated!', 'success');
+  _editSaleId = null;
+}
+
+function returnSaleFromEdit() {
+  closeModal('editSaleModal');
+  if (_editSaleId) {
+    const id = _editSaleId;
+    _editSaleId = null;
+    returnSale(id);
+  }
 }
 
 // ── RETURN / CANCEL A SALE ────────────────────────────────
@@ -3818,6 +3954,10 @@ window.printProductQr = printProductQr;
 window.printSaleReceiptById = printSaleReceiptById;
 window.deleteSale = deleteSale;
 window.returnSale = returnSale;
+window.openEditSale = openEditSale;
+window.saveEditSale = saveEditSale;
+window.updateEditSaleTotal = updateEditSaleTotal;
+window.returnSaleFromEdit = returnSaleFromEdit;
 window.renderSalesHistory = renderSalesHistory;
 window.openRestockScanner = openRestockScanner;
 window.closeRestockScanner = closeRestockScanner;
