@@ -378,14 +378,75 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 /* ===== RESPONSIVE ===== */
 .mobile-menu { display: none; background: none; border: none; color: var(--text); font-size: 1.4rem; cursor: pointer; }
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
+  /* Layout */
+  .sidebar { transform: translateX(-100%); position: fixed; z-index: 200; height: 100vh; }
   .sidebar.open { transform: translateX(0); }
-  .main { margin-left: 0; }
+  .main { margin-left: 0 !important; width: 100vw; }
   .mobile-menu { display: block; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-grid.cols-3 { grid-template-columns: 1fr; }
+  .content { padding: 12px; }
+
+  /* Forms */
+  .form-grid { grid-template-columns: 1fr !important; }
+  .form-grid.cols-3 { grid-template-columns: 1fr !important; }
+  .form-full { grid-column: span 1 !important; }
+
+  /* Stats & cards */
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .content { padding: 16px; }
+  .finance-row { flex-direction: column; }
+  .finance-card { min-width: unset; }
+
+  /* Topbar */
+  .topbar { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+  .page-title { font-size: 0.9rem; }
+  #syncStatus { font-size: 0.65rem; padding: 2px 7px; }
+
+  /* Section headers — stack on mobile */
+  .sec-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .sec-actions { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+  .sec-actions .btn { flex: 1; min-width: 120px; font-size: 0.78rem; padding: 7px 8px; text-align: center; }
+
+  /* Tables — horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl { min-width: 500px; font-size: 0.78rem; }
+  .tbl th, .tbl td { padding: 7px 8px; }
+  .tbl-actions { flex-direction: column; gap: 4px; }
+  .tbl-actions .btn { font-size: 0.7rem; padding: 4px 6px; }
+
+  /* Modals */
+  .modal { margin: 8px; max-height: 92vh; overflow-y: auto; width: calc(100vw - 16px) !important; max-width: none !important; }
+  .modal-body { padding: 14px; }
+  .modal-footer { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+  .modal-footer .btn { flex: 1; min-width: 100px; }
+
+  /* Dashboard cards */
+  .stat-card { padding: 14px 10px; }
+  .stat-val { font-size: 1.1rem !important; }
+  .stat-label { font-size: 0.68rem; }
+
+  /* Thesis cards grid */
+  #thesisContainer > div { grid-template-columns: 1fr !important; }
+
+  /* Finance row */
+  #financeStats > div { grid-template-columns: 1fr !important; }
+
+  /* Inventory insights */
+  #inventoryInsights { font-size: 0.82rem; }
+
+  /* Earnings */
+  #earningsTrackerBody .finance-row { flex-direction: column; }
+
+  /* Hide non-essential columns on small screens */
+  .tbl .hide-mobile { display: none; }
+
+  /* Bigger touch targets */
+  .btn { min-height: 36px; }
+  .nav-item { padding: 13px 20px; font-size: 0.92rem; }
+  input, select, textarea { font-size: 16px !important; } /* prevents iOS zoom */
+}
+
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .sec-actions .btn { font-size: 0.72rem; padding: 6px 6px; }
 }
 .overlay-bg { position: fixed; inset: 0; z-index: 99; display: none; }
 .overlay-bg.open { display: block; }
@@ -1058,6 +1119,32 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div class="modal-footer" style="justify-content:center;">
       <button class="btn btn-ghost" onclick="closeModal('genQrModal')">Close</button>
       <button class="btn btn-primary" onclick="printProductQr()">🖨️ Print QR</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK EDIT SELL PRICE MODAL -->
+<div class="modal-overlay" id="quickPriceModal">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Selling Price</div>
+      <button class="modal-close" onclick="closeModal('quickPriceModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="quickPriceProductName" style="font-weight:700;font-size:1rem;margin-bottom:4px;"></div>
+      <div id="quickPriceCurrentInfo" style="font-size:0.82rem;color:var(--text2);margin-bottom:16px;"></div>
+      <div class="form-group">
+        <label>New Selling Price (DZD)</label>
+        <input type="number" id="quickPrice_sell" placeholder="0" style="font-size:1.2rem;font-weight:800;">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>New Buy Price (DZD) — optional</label>
+        <input type="number" id="quickPrice_buy" placeholder="Leave blank to keep current">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('quickPriceModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuickPrice()">✅ Save Price</button>
     </div>
   </div>
 </div>
@@ -2403,8 +2490,10 @@ function saveInventory() {
   if (!name) { toast('Product name is required.', 'error'); return; }
   const inv = DB.get('inventory');
   const isNew = !editingId.inventory;
+  const existing = isNew ? null : inv.find(x => x.id === editingId.inventory);
   const record = {
     id: isNew ? uid() : editingId.inventory,
+    barcode: existing?.barcode || null, // preserve scanned barcode
     name, category: document.getElementById('inv_cat').value.trim(),
     supplier: document.getElementById('inv_supplier').value.trim(),
     qty: parseInt(document.getElementById('inv_qty').value) || 0,
@@ -2412,7 +2501,7 @@ function saveInventory() {
     buyPrice: parseFloat(document.getElementById('inv_buy').value) || 0,
     sellPrice: parseFloat(document.getElementById('inv_sell').value) || 0,
     notes: document.getElementById('inv_notes').value.trim(),
-    createdAt: isNew ? new Date().toISOString() : (inv.find(x=>x.id===editingId.inventory)?.createdAt || new Date().toISOString()),
+    createdAt: isNew ? new Date().toISOString() : (existing?.createdAt || new Date().toISOString()),
   };
   if (isNew) inv.unshift(record);
   else { const idx = inv.findIndex(x => x.id === editingId.inventory); if (idx !== -1) inv[idx] = record; }
@@ -2532,6 +2621,7 @@ function renderInventory() {
         <td>${statusBadgeInv} ${insightBadge}</td>
         <td><div class="tbl-actions">
           <button class="btn btn-ghost btn-sm" onclick="openSaleConfirmDirect('${p.id}')">💰 Sell</button>
+          <button class="btn btn-ghost btn-sm" onclick="openQuickPriceModal('${p.id}')">🏷️ Price</button>
           <button class="btn btn-ghost btn-sm" onclick="showProductQr('${p.id}')">🔳 QR</button>
           <button class="btn btn-ghost btn-sm" onclick="openInventoryModal('${p.id}')">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteInventory('${p.id}')">🗑</button>
@@ -2777,6 +2867,34 @@ function printProductQr() {
     };
   <\/script></body></html>`);
   win.document.close();
+}
+
+// ── QUICK PRICE EDIT ─────────────────────────────────────
+let _quickPriceId = null;
+function openQuickPriceModal(productId) {
+  const p = DB.get('inventory').find(x => x.id === productId);
+  if (!p) return;
+  _quickPriceId = productId;
+  document.getElementById('quickPriceProductName').textContent = p.name;
+  document.getElementById('quickPriceCurrentInfo').textContent =
+    `Current sell price: ${fmtMoney(p.sellPrice)}  |  Buy price: ${fmtMoney(p.buyPrice)}`;
+  document.getElementById('quickPrice_sell').value = p.sellPrice || '';
+  document.getElementById('quickPrice_buy').value = '';
+  openModal('quickPriceModal');
+}
+
+function saveQuickPrice() {
+  const sellPrice = parseFloat(document.getElementById('quickPrice_sell').value);
+  const buyPrice = parseFloat(document.getElementById('quickPrice_buy').value);
+  if (isNaN(sellPrice) || sellPrice < 0) { toast('Enter a valid sell price.', 'warn'); return; }
+  const inv = DB.get('inventory');
+  const p = inv.find(x => x.id === _quickPriceId);
+  if (!p) return;
+  p.sellPrice = sellPrice;
+  if (!isNaN(buyPrice) && buyPrice > 0) p.buyPrice = buyPrice;
+  DB.setOne('inventory', p).then(() => toast(`✅ Price updated: ${fmtMoney(sellPrice)}`, 'success'));
+  closeModal('quickPriceModal');
+  _quickPriceId = null;
 }
 
 // ── SALES RECEIPT ─────────────────────────────────────────
@@ -3221,7 +3339,7 @@ function renderDashboard() {
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card blue"><div class="stat-icon">🖥️</div><div class="stat-val">${active}</div><div class="stat-label">Active Repairs</div></div>
     <div class="stat-card purple"><div class="stat-icon">🎓</div><div class="stat-val">${activeProjects}</div><div class="stat-label">Active Projects</div></div>
-    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-val">${fmtMoney(month.profit)}</div><div class="stat-label">Monthly Profit</div></div>
+    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-val">${fmtMoney(month.profit)}</div><div class="stat-label">Monthly Profit (Net)</div></div>
     <div class="stat-card ${lowStock > 0 ? 'red' : 'orange'}"><div class="stat-icon">📦</div><div class="stat-val">${lowStock}</div><div class="stat-label">Low Stock Alerts</div></div>
     <div class="stat-card ${unpaid > 0 ? 'yellow' : 'green'}"><div class="stat-icon">⚠️</div><div class="stat-val">${unpaid}</div><div class="stat-label">Unpaid Balances</div></div>
     <div class="stat-card blue"><div class="stat-icon">📈</div><div class="stat-val">${fmtMoney(month.income)}</div><div class="stat-label">Monthly Income</div></div>
@@ -3234,7 +3352,7 @@ function renderDashboard() {
         <td style="font-family:var(--mono);font-size:0.78rem">${r.id}</td>
         <td>${r.customer.name}</td>
         <td>${statusBadge(r.status)}</td>
-        <td class="color-accent">${fmtMoney(r.pricing?.total||0)}</td>
+        <td class="color-accent">${fmtMoney((r.pricing?.total||0)-(r.pricing?.parts||0))}</td>
       </tr>`).join('')
     : `<tr><td colspan="4" class="text-center" style="color:var(--text3);padding:20px">No repairs</td></tr>`;
 
@@ -3678,6 +3796,8 @@ window.toggleCheck = toggleCheck;
 window.removeCheck = removeCheck;
 window.calcThesisRemaining = calcThesisRemaining;
 window.openInventoryModal = openInventoryModal;
+window.openQuickPriceModal = openQuickPriceModal;
+window.saveQuickPrice = saveQuickPrice;
 window.saveInventory = saveInventory;
 window.deleteInventory = deleteInventory;
 window.openAdjustModal = openAdjustModal;
