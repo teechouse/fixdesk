@@ -76,7 +76,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   transform: translate(-50%, -50%);
   object-fit: cover;
   opacity: 0.18;
-  filter: blur(1px) brightness(0.6);
+  filter: blur(0.5px);
 }
 #bgFallback {
   position: absolute;
@@ -1597,7 +1597,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
       <div class="form-group">
         <label>Background Opacity</label>
-        <input type="range" id="set_bgopacity" min="5" max="40" value="18" oninput="updateBgOpacity(this.value)" style="width:100%;accent-color:var(--accent);">
+        <input type="range" id="set_bgopacity" min="5" max="100" value="18" oninput="updateBgOpacity(this.value)" style="width:100%;accent-color:var(--accent);">
         <div id="opacityLabel" style="font-size:0.75rem;color:var(--text2);margin-top:2px;">18%</div>
       </div>
 
