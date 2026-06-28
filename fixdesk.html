@@ -2557,16 +2557,16 @@ function sendWhatsAppReady(r) {
   else if (!rawPhone.startsWith('213')) rawPhone = '213' + rawPhone;
   const phone = rawPhone;
   const msg = encodeURIComponent(
-    `Hello ${r.customer.name} 👋
+    `مرحباً ${r.customer.name} 👋
 
-Your ${device} is ready for pickup at ${shopName}! ✅🛠️
+جهازك ${device} جاهز للاستلام في ${shopName}! ✅🛠️
 
-You can come anytime during working hours.
+يمكنك الحضور في أي وقت خلال ساعات العمل.
 
-📍 Our location:
+📍 موقعنا:
 https://maps.app.goo.gl/EfTZ7TgYR3Ywa2kx7
 
-Thank you for choosing ${shopName}! 🙏`
+شكراً لاختيارك ${shopName}! 🙏! `
   );
   const waUrl = `https://wa.me/${phone}?text=${msg}`;
   // Show toast with button to open WhatsApp
