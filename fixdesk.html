@@ -76,7 +76,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   transform: translate(-50%, -50%);
   object-fit: cover;
   opacity: 0.18;
-  filter: blur(0.5px);
+  will-change: opacity;
+  transform-origin: center;
 }
 #bgFallback {
   position: absolute;
@@ -2115,8 +2116,23 @@ function openConfirm(title, msg, cb) {
   document.getElementById('confirmModal').classList.add('open');
 }
 
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const v = document.getElementById('bgVideo');
+  if (v && !v.paused) v.pause();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => {
+    const anyOpen = document.querySelector('.modal-overlay.open');
+    if (!anyOpen) {
+      const v = document.getElementById('bgVideo');
+      if (v && v.paused && v.src) v.play().catch(()=>{});
+    }
+  }, 100);
+}
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
 });
