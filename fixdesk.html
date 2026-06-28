@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FixDesk — Tech House</title>
+<meta name="version" content="2.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -213,8 +214,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 /* ===== MAIN CONTENT ===== */
 .main {
-  margin-left: var(--sidebar-w); height: 100vh;
-  overflow-y: auto; display: flex; flex-direction: column;
+  margin-left: var(--sidebar-w);
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-w));
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .topbar {
   background: rgba(8,12,20,0.85) !important;
@@ -1667,23 +1673,26 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 <!-- DEBT MODAL -->
 <div class="modal-overlay" id="debtModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
+  <div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
       <div class="modal-title" id="debtModalTitle">Add Debt</div>
       <button class="modal-close" onclick="closeModal('debtModal')">×</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="overflow-y:auto;flex:1;">
       <div class="form-group"><label>Customer Name *</label><input type="text" id="debt_name" placeholder="Full name"></div>
       <div class="form-group" style="margin-top:10px;"><label>Phone</label><input type="text" id="debt_phone" placeholder="Phone number"></div>
       <div class="form-group" style="margin-top:10px;"><label>What for?</label><input type="text" id="debt_desc" placeholder="e.g. iPhone screen repair, Flash drive…"></div>
-      <div class="form-grid cols-3" style="margin-top:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
         <div class="form-group"><label>Total Amount (DZD)</label><input type="number" id="debt_total" placeholder="0" oninput="calcDebtRemaining()"></div>
         <div class="form-group"><label>Paid So Far (DZD)</label><input type="number" id="debt_paid" placeholder="0" oninput="calcDebtRemaining()"></div>
-        <div class="form-group"><label>Still Owes</label><input type="number" id="debt_remaining" readonly style="opacity:0.7;font-weight:800;color:var(--red)"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Still Owes (auto)</label>
+        <input type="number" id="debt_remaining" readonly style="opacity:0.9;font-weight:800;font-size:1.1rem;color:var(--red);background:rgba(245,96,66,0.08);border-color:rgba(245,96,66,0.3);">
       </div>
       <div class="form-group" style="margin-top:10px;"><label>Date</label><input type="date" id="debt_date"></div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="flex-shrink:0;">
       <button class="btn btn-ghost" onclick="closeModal('debtModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveDebt()">Save</button>
     </div>
@@ -4580,14 +4589,14 @@ function globalSearchFn(q) {
   });
   DB.get('inventory').forEach(p => {
     if ([p.name, p.category, p.supplier].some(v => v?.toLowerCase().includes(lq))) {
-      results.push({ type: '📦 Product', label: p.name, sub: `Qty: ${p.qty}`, action: `showPage('inventory')` });
+      results.push({ type: '📦 Product', label: p.name, sub: `Stock: ${p.qty} | ${fmtMoney(p.sellPrice)}`, action: `showPage('inventory');setTimeout(()=>openInventoryModal('${p.id}'),80)` });
     }
   });
   if (!results.length) {
     dd.innerHTML = `<div class="search-result-item" style="color:var(--text3)">No results found</div>`;
   } else {
     dd.innerHTML = results.slice(0,8).map(r => `
-      <div class="search-result-item" onclick="${r.action}">
+      <div class="search-result-item" onclick="closeSearchDropdown();document.getElementById('globalSearch').value='';${r.action}" style="cursor:pointer;">
         <div style="font-weight:600">${r.type} • ${r.label}</div>
         <div class="sr-label">${r.sub}</div>
       </div>
