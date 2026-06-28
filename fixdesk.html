@@ -440,7 +440,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .alert-info { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
 
 /* ===== TICKET CARD VIEW ===== */
-.ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .ticket-card {
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 18px;
@@ -451,7 +451,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .tc-id { font-family: var(--mono); font-size: 0.75rem; color: var(--text3); }
 .tc-name { font-weight: 700; margin-bottom: 2px; }
 .tc-device { font-size: 0.8rem; color: var(--text2); }
-.tc-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.tc-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.tc-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .tc-price { font-weight: 700; color: var(--accent); }
 .tc-date { font-size: 0.75rem; color: var(--text3); }
 
@@ -548,6 +549,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .sec-actions .btn { font-size: 0.72rem; padding: 6px 6px; }
 }
+@media (max-width: 600px) {
+  .ticket-grid { grid-template-columns: 1fr !important; }
+  .tc-actions { flex-wrap: wrap; }
+  .tc-actions select { width: 100%; }
+}
 @media (max-width: 768px) {
   #analyticsChartsRow { grid-template-columns: 1fr !important; }
   #analyticsInsights { grid-template-columns: 1fr !important; }
@@ -579,13 +585,6 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js');
-      }
-    </script>
 </head>
 <body>
 
@@ -626,7 +625,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
         <span class="nav-icon">✅</span> Delivered
       </div>
       <div class="nav-item" onclick="showPage('thesis')">
-        <span class="nav-icon">🎓</span> Research / Thesis
+        <span class="nav-icon">🎓</span> Research
       </div>
       <div class="nav-item" onclick="showPage('inventory')">
         <span class="nav-icon">📦</span> Inventory
@@ -734,7 +733,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <!-- ===== THESIS PAGE ===== -->
       <div class="page" id="page-thesis">
         <div class="sec-header">
-          <div class="sec-title">🎓 Research & Thesis</div>
+          <div class="sec-title">🎓 Research</div>
           <div class="sec-actions">
             <select id="thesisFilter" onchange="renderThesis()" style="padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:0.83rem;outline:none;">
               <option value="">All</option>
@@ -1802,7 +1801,7 @@ function onCollectionUpdate(col) {
   const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
   if (!activePage) return;
   if (col === 'repairs') { renderDashboard(); if (activePage==='repairs') renderRepairs(); if (activePage==='delivered') renderDelivered(); if (activePage==='customer') {} }
-  if (col === 'thesis') { renderDashboard(); if (activePage==='thesis') renderThesis(); }
+  if (col === 'thesis') { renderDashboard(); if (activePage==='thesis') renderThesis(); if (activePage==='delivered') renderDelivered(); }
   if (col === 'inventory') { renderDashboard(); if (activePage==='inventory') renderInventory(); }
   if (col === 'transactions') { renderDashboard(); if (activePage==='finance') renderFinance(); }
   if (col === 'earnings') { if (activePage==='earnings') renderEarningsTracker(); }
@@ -2032,7 +2031,7 @@ function initApp() {
 // ========================================================
 const pageTitles = {
   dashboard: 'Dashboard', repairs: 'PC Repair Management',
-  delivered: 'Delivered Tickets', thesis: 'Research & Thesis',
+  delivered: 'Delivered Tickets', thesis: 'Research',
   inventory: 'Inventory', finance: 'Finance', customer: '🔎 Customer Lookup',
   earnings: '💵 My Earnings Tracker',
   sales: '🧾 Sales History',
@@ -2462,9 +2461,9 @@ function renderRepairs() {
       </div>
       <div style="font-size:0.8rem;color:var(--text2);margin:8px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.problem}</div>
       <div class="tc-footer">
-        <div style="font-size:0.75rem;color:var(--text3);">📞 ${r.customer.phone||'—'}</div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <select class="btn btn-ghost btn-sm" style="padding:4px 6px;font-size:0.75rem;cursor:pointer;" onchange="event.stopPropagation();updateRepairStatus('${r.id}',this.value)" onclick="event.stopPropagation()">
+        <div style="font-size:0.75rem;color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();if('${r.customer.phone}')window.open('tel:${r.customer.phone}')">📞 ${r.customer.phone||'—'}</div>
+        <div class="tc-actions">
+          <select class="btn btn-ghost btn-sm" style="flex:1;min-width:0;padding:5px 4px;font-size:0.72rem;cursor:pointer;" onchange="event.stopPropagation();updateRepairStatus('${r.id}',this.value)" onclick="event.stopPropagation()">
             <option value="${r.status}" selected disabled>${r.status}</option>
             <option value="Pending">Pending</option>
             <option value="Diagnosing">Diagnosing</option>
@@ -2473,8 +2472,8 @@ function renderRepairs() {
             <option value="Ready">Ready</option>
             <option value="Completed">Completed</option>
           </select>
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();printTicket('${r.id}')">🖨️</button>
-          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markDelivered('${r.id}')">📦 Delivered</button>
+          <button class="btn btn-ghost btn-sm" style="padding:5px 8px;" onclick="event.stopPropagation();printTicket('${r.id}')">🖨️</button>
+          <button class="btn btn-success btn-sm" style="padding:5px 10px;white-space:nowrap;" onclick="event.stopPropagation();markDelivered('${r.id}')">📦 Deliver</button>
         </div>
       </div>
     </div>
@@ -2564,16 +2563,16 @@ function sendWhatsAppReady(r) {
   else if (!rawPhone.startsWith('213')) rawPhone = '213' + rawPhone;
   const phone = rawPhone;
   const msg = encodeURIComponent(
-    `مرحباً ${r.customer.name} 👋
+    `Hello ${r.customer.name} 👋
 
-جهازك ${device} جاهز للاستلام في ${shopName}! ✅🛠️
+Your ${device} is ready for pickup at ${shopName}! ✅🛠️
 
-يمكنك الحضور في أي وقت خلال ساعات العمل.
+You can come anytime during working hours.
 
-📍 موقعنا:
+📍 Our location:
 https://maps.app.goo.gl/EfTZ7TgYR3Ywa2kx7
 
-شكراً لاختيارك ${shopName}! 🙏! `
+Thank you for choosing ${shopName}! 🙏`
   );
   const waUrl = `https://wa.me/${phone}?text=${msg}`;
   // Show toast with button to open WhatsApp
@@ -2587,45 +2586,60 @@ https://maps.app.goo.gl/EfTZ7TgYR3Ywa2kx7
 }
 
 function renderDelivered() {
-  let repairs = DB.get('repairs').filter(r => r.status === 'Delivered');
+  const repairs = DB.get('repairs').filter(r => r.status === 'Delivered');
+  const thesisDelivered = DB.get('thesis').filter(t => t.delivered);
   const earnings = DB.get('earnings');
   const container = document.getElementById('deliveredContainer');
-  if (!repairs.length) {
-    container.innerHTML = `<div class="no-data"><div class="nd-icon">✅</div><p>No delivered tickets yet.</p></div>`;
+
+  if (!repairs.length && !thesisDelivered.length) {
+    container.innerHTML = `<div class="no-data"><div class="nd-icon">✅</div><p>No delivered items yet.</p></div>`;
     return;
   }
+
+  const repairRows = repairs.map(r => {
+    const dDays = DELIVER_EXPIRE_DAYS - daysAgo(r.deliveredAt);
+    const ticketEarnings = earnings.filter(e => e.ticketId === r.id);
+    const totalReceived = ticketEarnings.reduce((s,e) => s+(e.amount||0), 0);
+    const hasRefund = ticketEarnings.some(e => e.amount < 0);
+    return `<tr>
+      <td><span class="badge badge-inprogress" style="font-size:0.65rem;">🔧 Repair</span><br><span style="font-family:var(--mono);font-size:0.75rem">${r.id}</span></td>
+      <td><div style="font-weight:600">${r.customer.name}</div><div style="font-size:0.75rem;color:var(--accent);cursor:pointer;" onclick="window.open('tel:${r.customer.phone}')">📞 ${r.customer.phone}</div></td>
+      <td style="font-size:0.82rem">${r.device.type}${r.device.brand?' • '+r.device.brand:''}</td>
+      <td>${totalReceived>0?`<span class="fw-bold color-green">${fmtMoney(totalReceived)}</span>`:totalReceived<0?`<span class="fw-bold" style="color:var(--red)">${fmtMoney(totalReceived)}</span>`:`<span style="color:var(--text3);font-size:0.8rem;">Not recorded</span>`}${hasRefund?'<div style="font-size:0.7rem;color:var(--red)">↩️ refund</div>':''}</td>
+      <td style="font-size:0.8rem">${fmtDate(r.deliveredAt)}</td>
+      <td><span class="badge ${dDays<=3?'badge-urgent':'badge-ontrack'}">${dDays}d left</span></td>
+      <td><div class="tbl-actions">
+        <button class="btn btn-ghost btn-sm" onclick="viewRepair('${r.id}')">👁</button>
+        <button class="btn btn-ghost btn-sm" onclick="addEarningToTicket('${r.id}')">💰</button>
+        <button class="btn btn-warn btn-sm" onclick="undeliverTicket('${r.id}')">↩️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRepair('${r.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  });
+
+  const thesisRows = thesisDelivered.map(t => {
+    return `<tr>
+      <td><span class="badge badge-delivered" style="font-size:0.65rem;">🎓 Thesis</span><br><span style="font-family:var(--mono);font-size:0.75rem">${t.id.substring(0,8)}</span></td>
+      <td><div style="font-weight:600">${t.student.name}</div><div style="font-size:0.75rem;color:var(--text2)">📞 ${t.student.phone||'—'}</div></td>
+      <td style="font-size:0.82rem">${t.type||'Thesis'} — ${(t.title||'—').substring(0,25)}</td>
+      <td>${t.payment?.remaining>0?`<span class="fw-bold" style="color:var(--red)">Owes ${fmtMoney(t.payment.remaining)}</span>`:`<span class="fw-bold color-green">${fmtMoney(t.payment?.paid||0)}</span>`}</td>
+      <td style="font-size:0.8rem">${fmtDate(t.deliveredAt)}</td>
+      <td><span class="badge badge-delivered">✅</span></td>
+      <td><div class="tbl-actions">
+        <button class="btn btn-ghost btn-sm" onclick="viewThesis('${t.id}')">👁</button>
+        <button class="btn btn-warn btn-sm" onclick="undeliverThesis('${t.id}')">↩️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteThesis('${t.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  });
+
   container.innerHTML = `<div class="table-wrap"><table class="tbl">
-    <thead><tr><th>ID</th><th>Customer</th><th>Device</th><th>Received</th><th>Delivered</th><th>Expires</th><th>Actions</th></tr></thead>
-    <tbody>${repairs.map(r => {
-      const dDays = DELIVER_EXPIRE_DAYS - daysAgo(r.deliveredAt);
-      // Find all earnings entries for this ticket
-      const ticketEarnings = earnings.filter(e => e.ticketId === r.id);
-      const totalReceived = ticketEarnings.reduce((s, e) => s + (e.amount || 0), 0);
-      const hasRefund = ticketEarnings.some(e => e.amount < 0);
-      return `<tr>
-        <td><span style="font-family:var(--mono);font-size:0.78rem">${r.id}</span></td>
-        <td><div style="font-weight:600">${r.customer.name}</div><div style="font-size:0.75rem;color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();if('${r.customer.phone}')window.open('tel:${r.customer.phone}')">📞 ${r.customer.phone}</div></td>
-        <td style="font-size:0.82rem">${r.device.type}${r.device.brand ? ' • '+r.device.brand : ''}</td>
-        <td>
-          ${totalReceived > 0 ? `<span class="fw-bold color-green">${fmtMoney(totalReceived)}</span>` :
-            totalReceived < 0 ? `<span class="fw-bold" style="color:var(--red)">${fmtMoney(totalReceived)}</span>` :
-            `<span style="color:var(--text3);font-size:0.8rem;">Not recorded</span>`}
-          ${hasRefund ? `<div style="font-size:0.7rem;color:var(--red)">↩️ refund included</div>` : ''}
-        </td>
-        <td style="font-size:0.8rem">${fmtDate(r.deliveredAt)}</td>
-        <td><span class="badge ${dDays <= 3 ? 'badge-urgent' : 'badge-ontrack'}">${dDays}d left</span></td>
-        <td><div class="tbl-actions">
-          <button class="btn btn-ghost btn-sm" onclick="viewRepair('${r.id}')">👁 View</button>
-          <button class="btn btn-ghost btn-sm" onclick="addEarningToTicket('${r.id}')">💰 Add</button>
-          <button class="btn btn-warn btn-sm" onclick="undeliverTicket('${r.id}')">↩️ Return</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteRepair('${r.id}')">🗑</button>
-        </div></td>
-      </tr>`;
-    }).join('')}</tbody>
+    <thead><tr><th>Type</th><th>Customer</th><th>Item</th><th>Payment</th><th>Delivered</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${[...repairRows, ...thesisRows].join('')}</tbody>
   </table></div>`;
 }
 
-// Add earnings to an already-delivered ticket
+
 function addEarningToTicket(ticketId) {
   _pendingDeliverId = ticketId;
   document.getElementById('earningsTicketId').textContent = ticketId;
@@ -2753,6 +2767,31 @@ function saveThesis() {
     if (idx !== -1) thesis[idx] = record;
   }
   DB.setOne('thesis', record).then(() => toast(isNew ? 'Project created!' : 'Project updated!'));
+  // Auto-create/update debt if there's a remaining balance
+  if (record.payment.remaining > 0) {
+    const debts = DB.get('debts');
+    const existingDebt = debts.find(d => d.thesisId === record.id);
+    if (!existingDebt) {
+      const debtRecord = {
+        id: uid(), thesisId: record.id,
+        name: record.student.name,
+        phone: record.student.phone || '',
+        desc: record.title || 'Thesis/Research project',
+        total: record.payment.total,
+        paid: record.payment.paid,
+        remaining: record.payment.remaining,
+        settled: false,
+        date: today(),
+        createdAt: new Date().toISOString()
+      };
+      DB.setOne('debts', debtRecord);
+    } else {
+      existingDebt.paid = record.payment.paid;
+      existingDebt.remaining = record.payment.remaining;
+      existingDebt.settled = record.payment.remaining <= 0;
+      DB.setOne('debts', existingDebt);
+    }
+  }
   closeModal('thesisModal');
 }
 
@@ -2766,11 +2805,11 @@ function deleteThesis(id) {
 function renderThesis() {
   let allThesis = DB.get('thesis');
   const filter = document.getElementById('thesisFilter').value;
-  let thesis = [...allThesis];
-  if (filter === 'Active') thesis = thesis.filter(t => !t.delivered && t.progress < 100 && (!t.deadline || daysUntil(t.deadline) >= 0));
-  if (filter === 'Completed') thesis = thesis.filter(t => !t.delivered && t.progress === 100);
-  if (filter === 'Delivered') thesis = thesis.filter(t => t.delivered);
-  if (filter === 'Overdue') thesis = thesis.filter(t => !t.delivered && t.deadline && daysUntil(t.deadline) < 0 && t.progress < 100);
+  // By default only show non-delivered — delivered ones go to Delivered page
+  let thesis = filter === 'Delivered' ? allThesis.filter(t => t.delivered) : allThesis.filter(t => !t.delivered);
+  if (filter === 'Active') thesis = thesis.filter(t => t.progress < 100 && (!t.deadline || daysUntil(t.deadline) >= 0));
+  if (filter === 'Completed') thesis = thesis.filter(t => t.progress === 100);
+  if (filter === 'Overdue') thesis = thesis.filter(t => t.deadline && daysUntil(t.deadline) < 0 && t.progress < 100);
 
   // Stats
   const stats = [
@@ -2961,6 +3000,15 @@ function saveThesisPayment() {
   t.paymentHistory.push({ id: uid(), amount, note, date: today() });
   DB.setOne('thesis', t).then(() => toast(`Payment of ${fmtMoney(amount)} saved!`, 'success'));
   addAutoTxn('income', amount, 'Thesis/Research', `${t.student.name} – ${note||'Payment'}`);
+  // Sync debt record
+  const debts2 = DB.get('debts');
+  const linkedDebt = debts2.find(d => d.thesisId === _thesisPayId);
+  if (linkedDebt) {
+    linkedDebt.paid = t.payment.paid;
+    linkedDebt.remaining = t.payment.remaining;
+    linkedDebt.settled = t.payment.remaining <= 0;
+    DB.setOne('debts', linkedDebt);
+  }
   closeModal('thesisPayModal');
   _thesisPayId = null;
 }
@@ -3990,19 +4038,18 @@ function renderDashboard() {
   const thesis = DB.get('thesis');
   const inv = DB.get('inventory');
   const active = repairs.filter(r => !['Completed','Cancelled'].includes(r.status)).length;
-  const activeProjects = thesis.filter(t => t.progress < 100).length;
+  const activeProjects = thesis.filter(t => !t.delivered && t.progress < 100).length;
   const lowStock = inv.filter(p => p.lowAlert > 0 && p.qty <= p.lowAlert).length;
   const month = calcFinancials('month');
-  const unpaid = [
-    ...repairs.filter(r => (r.pricing?.remaining||0) > 0 && r.status !== 'Cancelled'),
-    ...thesis.filter(t => t.payment?.remaining > 0)
-  ].length;
+  const activeDebts = DB.get('debts').filter(d => !d.settled);
+  const unpaid = activeDebts.length;
+  const unpaidTotal = activeDebts.reduce((s,d) => s+(d.remaining||0), 0);
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card blue" onclick="showPage('repairs')" title="Go to Repairs"><div class="stat-icon">🖥️</div><div class="stat-val">${active}</div><div class="stat-label">Active Repairs</div></div>
     <div class="stat-card purple" onclick="showPage('thesis')" title="Go to Research"><div class="stat-icon">🎓</div><div class="stat-val">${activeProjects}</div><div class="stat-label">Active Projects</div></div>
     <div class="stat-card green" onclick="showPage('finance')" title="Go to Finance"><div class="stat-icon">💰</div><div class="stat-val">${fmtMoney(month.profit)}</div><div class="stat-label">Monthly Profit (Net)</div></div>
     <div class="stat-card ${lowStock > 0 ? 'red' : 'orange'}" onclick="showPage('inventory')" title="Go to Inventory"><div class="stat-icon">📦</div><div class="stat-val">${lowStock}</div><div class="stat-label">Low Stock Alerts</div></div>
-    <div class="stat-card ${unpaid > 0 ? 'yellow' : 'green'}" onclick="showPage('debts')" title="Go to Debts"><div class="stat-icon">⚠️</div><div class="stat-val">${unpaid}</div><div class="stat-label">Unpaid Balances</div></div>
+    <div class="stat-card ${unpaidTotal > 0 ? 'yellow' : 'green'}" onclick="showPage('debts')" title="Go to Debts"><div class="stat-icon">⚠️</div><div class="stat-val">${unpaidTotal > 0 ? fmtMoney(unpaidTotal) : '0'}</div><div class="stat-label">Total Unpaid</div></div>
     <div class="stat-card blue" onclick="showPage('finance')" title="Go to Finance"><div class="stat-icon">📈</div><div class="stat-val">${fmtMoney(month.income)}</div><div class="stat-label">Monthly Income</div></div>
   `;
 
@@ -4018,7 +4065,7 @@ function renderDashboard() {
     : `<tr><td colspan="4" class="text-center" style="color:var(--text3);padding:20px">No repairs</td></tr>`;
 
   // Recent thesis
-  const recThesis = thesis.slice(0, 5);
+  const recThesis = DB.get('thesis').filter(t => !t.delivered).slice(0, 5);
   document.getElementById('dashProjectsTbody').innerHTML = recThesis.length
     ? recThesis.map(t => `<tr>
         <td>${t.student.name}</td>
@@ -4337,7 +4384,6 @@ function saveEarningsAndDeliver() {
 function finalizeDelivered() {
   if (!_pendingDeliverId) return;
   const id = _pendingDeliverId;
-  // Check if already delivered (adding earnings to existing delivered ticket)
   const repairs = DB.get('repairs');
   const r = repairs.find(x => x.id === id);
   _pendingDeliverId = null;
@@ -4346,9 +4392,62 @@ function finalizeDelivered() {
     r.deliveredAt = new Date().toISOString();
     DB.setOne('repairs', r).then(() => toast('Ticket moved to Delivered!', 'success'));
     closeModal('repairDetailModal');
+    // Check unpaid balance and auto-add to debt list
+    setTimeout(() => checkRepairDebt(r), 800);
   } else {
-    // Just recording payment on already-delivered ticket
+    // Just recording payment on already-delivered ticket — recheck debt
+    if (r) setTimeout(() => checkRepairDebt(r), 500);
     renderDelivered();
+  }
+}
+
+function checkRepairDebt(r) {
+  // Calculate total received for this ticket
+  const earnings = DB.get('earnings');
+  const totalReceived = earnings
+    .filter(e => e.ticketId === r.id)
+    .reduce((s, e) => s + (e.amount || 0), 0);
+  const totalPrice = r.pricing?.total || 0;
+  const remaining = totalPrice - totalReceived;
+
+  if (remaining <= 0) {
+    // Fully paid — remove debt if exists
+    const debts = DB.get('debts');
+    const existing = debts.find(d => d.repairId === r.id);
+    if (existing) {
+      existing.settled = true;
+      existing.remaining = 0;
+      existing.paid = existing.total;
+      DB.setOne('debts', existing);
+    }
+    return;
+  }
+
+  // Has unpaid balance — create or update debt
+  const debts = DB.get('debts');
+  const existing = debts.find(d => d.repairId === r.id);
+  if (!existing) {
+    const debtRecord = {
+      id: uid(),
+      repairId: r.id,
+      name: r.customer.name,
+      phone: r.customer.phone || '',
+      desc: `Repair: ${r.device.type} — ${r.serviceType || r.problem?.substring(0,30) || ''}`,
+      total: totalPrice > 0 ? totalPrice : remaining,
+      paid: totalReceived,
+      remaining,
+      settled: false,
+      date: today(),
+      createdAt: new Date().toISOString()
+    };
+    DB.setOne('debts', debtRecord).then(() => {
+      if (remaining > 0) toast(`⚠️ ${r.customer.name} owes ${fmtMoney(remaining)} — added to Debt List`, 'warn');
+    });
+  } else {
+    existing.paid = totalReceived;
+    existing.remaining = remaining;
+    existing.settled = remaining <= 0;
+    DB.setOne('debts', existing);
   }
 }
 
