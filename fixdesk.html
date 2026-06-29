@@ -654,6 +654,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       <div class="nav-item" onclick="showPage('analytics')">
         <span class="nav-icon">📊</span> Analytics
       </div>
+      <div class="nav-item" onclick="showPage('shopping')">
+        <span class="nav-icon">🛒</span> Shopping List
+      </div>
       <div class="nav-item" onclick="openSmartScanner()">
         <span class="nav-icon">📷</span> Smart Scan
       </div>
@@ -899,6 +902,33 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
         </div>
         <!-- Business insights -->
         <div id="analyticsInsights" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;"></div>
+      </div>
+
+      <!-- ===== SHOPPING LIST PAGE ===== -->
+      <div class="page" id="page-shopping">
+        <div class="sec-header" style="margin-bottom:20px;">
+          <div class="sec-title">🛒 Shopping List</div>
+          <div class="sec-actions">
+            <button class="btn btn-primary" onclick="openShoppingModal()">＋ Add Item</button>
+          </div>
+        </div>
+        <div id="shoppingStats" class="finance-row mb-16"></div>
+        <!-- Restock section -->
+        <div style="margin-bottom:24px;">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span style="background:rgba(255,140,0,0.15);border:1px solid rgba(255,140,0,0.3);padding:3px 10px;border-radius:20px;font-size:0.8rem;color:var(--accent);">🔄 Restock</span>
+            Items you need to reorder
+          </div>
+          <div id="shoppingRestock"></div>
+        </div>
+        <!-- Buy to sell section -->
+        <div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span style="background:rgba(0,201,177,0.15);border:1px solid rgba(0,201,177,0.3);padding:3px 10px;border-radius:20px;font-size:0.8rem;color:var(--teal);">🆕 Buy to Sell</span>
+            New products to get
+          </div>
+          <div id="shoppingBuy"></div>
+        </div>
       </div>
 
     </div><!-- /content -->
@@ -1725,6 +1755,49 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   </div>
 </div>
 
+<!-- SHOPPING LIST MODAL -->
+<div class="modal-overlay" id="shoppingModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title" id="shoppingModalTitle">Add to Shopping List</div>
+      <button class="modal-close" onclick="closeModal('shoppingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="shop_type" style="width:100%;">
+          <option value="restock">🔄 Restock — item I already sell</option>
+          <option value="buy">🆕 Buy to Sell — new product to get</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Item Name *</label>
+        <input type="text" id="shop_name" placeholder="e.g. USB Flash Drive 64GB">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Quantity Needed</label>
+        <input type="number" id="shop_qty" placeholder="e.g. 10" min="1">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Estimated Price (DZD) — optional</label>
+        <input type="number" id="shop_price" placeholder="0">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Where to buy / Supplier</label>
+        <input type="text" id="shop_supplier" placeholder="e.g. Supplier name, market…">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Note</label>
+        <input type="text" id="shop_note" placeholder="Any extra info…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('shoppingModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveShoppingItem()">✅ Add to List</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal" style="max-width:420px">
@@ -1792,8 +1865,8 @@ const db = getFirestore(app);
 //  FIRESTORE DB LAYER
 // ========================================================
 // In-memory cache — Firestore listeners keep it up to date
-const _cache = { repairs:[], thesis:[], inventory:[], transactions:[], earnings:[], sales:[], debts:[], wallet:[] };
-const COLLECTIONS = ['repairs','thesis','inventory','transactions','earnings','sales','debts','wallet'];
+const _cache = { repairs:[], thesis:[], inventory:[], transactions:[], earnings:[], sales:[], debts:[], wallet:[], shopping:[] };
+const COLLECTIONS = ['repairs','thesis','inventory','transactions','earnings','sales','debts','wallet','shopping'];
 
 // Setup real-time listeners for all collections
 function setupListeners() {
@@ -1809,12 +1882,24 @@ function setupListeners() {
 function onCollectionUpdate(col) {
   const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
   if (!activePage) return;
-  if (col === 'repairs') { renderDashboard(); if (activePage==='repairs') renderRepairs(); if (activePage==='delivered') renderDelivered(); if (activePage==='customer') {} }
-  if (col === 'thesis') { renderDashboard(); if (activePage==='thesis') renderThesis(); if (activePage==='delivered') renderDelivered(); }
-  if (col === 'inventory') { renderDashboard(); if (activePage==='inventory') renderInventory(); }
-  if (col === 'transactions') { renderDashboard(); if (activePage==='finance') renderFinance(); }
-  if (col === 'earnings') { if (activePage==='earnings') renderEarningsTracker(); }
-  if (col === 'sales') { renderDashboard(); if (activePage==='sales') renderSalesHistory(); if (activePage==='inventory') renderInventory(); }
+
+  // Always refresh dashboard for data-changing collections
+  const dashCols = ['repairs','thesis','inventory','transactions','earnings','sales','debts'];
+  if (dashCols.includes(col)) renderDashboard();
+
+  // Refresh the current active page
+  const pageMap = {
+    repairs:     () => { if(activePage==='repairs') renderRepairs(); if(activePage==='delivered') renderDelivered(); if(activePage==='customer') {} },
+    thesis:      () => { if(activePage==='thesis') renderThesis(); if(activePage==='delivered') renderDelivered(); },
+    inventory:   () => { if(activePage==='inventory') renderInventory(); if(activePage==='sales') renderSalesHistory(); },
+    transactions:() => { if(activePage==='finance') renderFinance(); },
+    earnings:    () => { if(activePage==='earnings') renderEarningsTracker(); if(activePage==='delivered') renderDelivered(); },
+    sales:       () => { if(activePage==='sales') renderSalesHistory(); if(activePage==='inventory') renderInventory(); },
+    debts:       () => { if(activePage==='debts') renderDebts(); },
+    wallet:      () => { if(activePage==='wallet') renderWallet(); },
+    shopping:    () => { if(activePage==='shopping') renderShoppingList(); },
+  };
+  if (pageMap[col]) pageMap[col]();
 }
 
 const DB = {
@@ -1836,9 +1921,19 @@ const DB = {
     await batch.commit();
   },
   async setOne(col, item) {
+    // Update cache immediately for instant UI response
+    const idx = _cache[col]?.findIndex(x => x.id === item.id);
+    if (idx !== undefined && idx > -1) _cache[col][idx] = item;
+    else if (_cache[col]) _cache[col].unshift(item);
+    // Trigger immediate re-render
+    onCollectionUpdate(col);
+    // Then write to Firestore (listener will fire again but cache is already updated)
     await setDoc(doc(db, col, item.id), item);
   },
   async deleteOne(col, id) {
+    // Remove from cache immediately
+    if (_cache[col]) _cache[col] = _cache[col].filter(x => x.id !== id);
+    onCollectionUpdate(col);
     await deleteDoc(doc(db, col, id));
   }
 };
@@ -2046,7 +2141,8 @@ const pageTitles = {
   sales: '🧾 Sales History',
   debts: '📋 Debt List',
   wallet: '👛 Shop Wallet',
-  analytics: '📊 Business Analytics'
+  analytics: '📊 Business Analytics',
+  shopping: '🛒 Shopping List'
 };
 
 function showPage(id) {
@@ -2070,6 +2166,7 @@ function showPage(id) {
   if (id === 'debts') renderDebts();
   if (id === 'wallet') renderWallet();
   if (id === 'analytics') renderAnalytics();
+  if (id === 'shopping') renderShoppingList();
 }
 
 function openSidebar() {
@@ -2470,19 +2567,19 @@ function renderRepairs() {
       </div>
       <div style="font-size:0.8rem;color:var(--text2);margin:8px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.problem}</div>
       <div class="tc-footer">
-        <div style="font-size:0.75rem;color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();if('${r.customer.phone}')window.open('tel:${r.customer.phone}')">📞 ${r.customer.phone||'—'}</div>
-        <div class="tc-actions">
-          <select class="btn btn-ghost btn-sm" style="flex:1;min-width:0;padding:5px 4px;font-size:0.72rem;cursor:pointer;" onchange="event.stopPropagation();updateRepairStatus('${r.id}',this.value)" onclick="event.stopPropagation()">
-            <option value="${r.status}" selected disabled>${r.status}</option>
-            <option value="Pending">Pending</option>
-            <option value="Diagnosing">Diagnosing</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Waiting for Parts">Waiting for Parts</option>
-            <option value="Ready">Ready</option>
-            <option value="Completed">Completed</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" style="padding:5px 8px;" onclick="event.stopPropagation();printTicket('${r.id}')">🖨️</button>
-          <button class="btn btn-success btn-sm" style="padding:5px 10px;white-space:nowrap;" onclick="event.stopPropagation();markDelivered('${r.id}')">📦 Deliver</button>
+        <div style="font-size:0.75rem;color:var(--accent);cursor:pointer;margin-bottom:6px;" onclick="event.stopPropagation();if('${r.customer.phone}')window.open('tel:${r.customer.phone}')">📞 ${r.customer.phone||'—'}</div>
+        <select class="btn btn-ghost btn-sm" style="width:100%;padding:7px 8px;font-size:0.8rem;cursor:pointer;margin-bottom:6px;" onchange="event.stopPropagation();updateRepairStatus('${r.id}',this.value)" onclick="event.stopPropagation()">
+          <option value="${r.status}" selected disabled>📋 ${r.status}</option>
+          <option value="Pending">Pending</option>
+          <option value="Diagnosing">Diagnosing</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Waiting for Parts">Waiting for Parts</option>
+          <option value="Ready">Ready</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1;padding:7px;" onclick="event.stopPropagation();printTicket('${r.id}')">🖨️ Print</button>
+          <button class="btn btn-success btn-sm" style="flex:2;padding:7px;" onclick="event.stopPropagation();markDelivered('${r.id}')">📦 Deliver</button>
         </div>
       </div>
     </div>
@@ -2572,16 +2669,16 @@ function sendWhatsAppReady(r) {
   else if (!rawPhone.startsWith('213')) rawPhone = '213' + rawPhone;
   const phone = rawPhone;
   const msg = encodeURIComponent(
-    `Hello ${r.customer.name} 👋
+    `مرحباً ${r.customer.name} 👋
 
-Your ${device} is ready for pickup at ${shopName}! ✅🛠️
+جهازك (${device}) جاهز للاستلام في ${shopName} ✅🛠️
 
-You can come anytime during working hours.
+يمكنك الحضور في أي وقت خلال ساعات العمل.
 
-📍 Our location:
+📍 موقعنا:
 https://maps.app.goo.gl/EfTZ7TgYR3Ywa2kx7
 
-Thank you for choosing ${shopName}! 🙏`
+شكراً لاختيارك ${shopName}! 🙏`
   );
   const waUrl = `https://wa.me/${phone}?text=${msg}`;
   // Show toast with button to open WhatsApp
@@ -4902,6 +4999,117 @@ window.closeAssignBarcode = closeAssignBarcode;
 window.saveAssignBarcode = saveAssignBarcode;
 window.addEarningToTicket = addEarningToTicket;
 // ═══════════════════════════════════════════════════════
+//  SHOPPING LIST
+// ═══════════════════════════════════════════════════════
+let _editShoppingId = null;
+
+function openShoppingModal(id = null) {
+  _editShoppingId = id;
+  document.getElementById('shoppingModalTitle').textContent = id ? 'Edit Item' : 'Add to Shopping List';
+  if (id) {
+    const item = DB.get('shopping').find(x => x.id === id);
+    if (item) {
+      document.getElementById('shop_type').value = item.type;
+      document.getElementById('shop_name').value = item.name;
+      document.getElementById('shop_qty').value = item.qty || '';
+      document.getElementById('shop_price').value = item.price || '';
+      document.getElementById('shop_supplier').value = item.supplier || '';
+      document.getElementById('shop_note').value = item.note || '';
+    }
+  } else {
+    ['shop_name','shop_qty','shop_price','shop_supplier','shop_note'].forEach(f => document.getElementById(f).value = '');
+    document.getElementById('shop_type').value = 'restock';
+  }
+  openModal('shoppingModal');
+}
+
+function saveShoppingItem() {
+  const name = document.getElementById('shop_name').value.trim();
+  if (!name) { toast('Item name is required.', 'warn'); return; }
+  const record = {
+    id: _editShoppingId || uid(),
+    type: document.getElementById('shop_type').value,
+    name,
+    qty: parseInt(document.getElementById('shop_qty').value) || 0,
+    price: parseFloat(document.getElementById('shop_price').value) || 0,
+    supplier: document.getElementById('shop_supplier').value.trim(),
+    note: document.getElementById('shop_note').value.trim(),
+    done: _editShoppingId ? (DB.get('shopping').find(x=>x.id===_editShoppingId)?.done || false) : false,
+    createdAt: _editShoppingId ? (DB.get('shopping').find(x=>x.id===_editShoppingId)?.createdAt || new Date().toISOString()) : new Date().toISOString()
+  };
+  DB.setOne('shopping', record).then(() => toast('✅ Saved!', 'success'));
+  closeModal('shoppingModal');
+  _editShoppingId = null;
+}
+
+function toggleShoppingDone(id) {
+  const items = DB.get('shopping');
+  const item = items.find(x => x.id === id);
+  if (item) {
+    item.done = !item.done;
+    DB.setOne('shopping', item);
+  }
+}
+
+function deleteShoppingItem(id) {
+  DB.deleteOne('shopping', id).then(() => toast('Deleted.', 'warn'));
+}
+
+function renderShoppingList() {
+  const all = DB.get('shopping');
+  const restock = all.filter(x => x.type === 'restock');
+  const buy = all.filter(x => x.type === 'buy');
+  const doneCount = all.filter(x => x.done).length;
+
+  // Estimate totals (only items with a price set, skip 0/empty)
+  const restockEst = restock.filter(x=>!x.done&&x.price>0).reduce((s,x)=>s+x.price*(x.qty||1),0);
+  const buyEst = buy.filter(x=>!x.done&&x.price>0).reduce((s,x)=>s+x.price*(x.qty||1),0);
+  const totalEst = restockEst + buyEst;
+  const hasPrices = all.some(x=>x.price>0);
+
+  document.getElementById('shoppingStats').innerHTML = `
+    <div class="finance-card"><div class="fc-label">Total Items</div><div class="fc-val">${all.length}</div></div>
+    <div class="finance-card expense"><div class="fc-label">🔄 Restock</div><div class="fc-val">${restock.length}</div></div>
+    <div class="finance-card"><div class="fc-label">🆕 Buy to Sell</div><div class="fc-val">${buy.length}</div></div>
+    <div class="finance-card income"><div class="fc-label">✅ Done</div><div class="fc-val">${doneCount}</div></div>
+    <div class="finance-card ${totalEst>0?'expense':''}">
+      <div class="fc-label">💸 Est. Total Cost</div>
+      <div class="fc-val" style="font-size:${totalEst>0?'1rem':'1.4rem'}">${totalEst>0?fmtMoney(totalEst):'—'}</div>
+      ${hasPrices&&totalEst>0?`<div style="font-size:0.68rem;color:var(--text3);margin-top:2px;">items with price only</div>`:''}
+    </div>
+  `;
+
+  function renderItems(items, containerId) {
+    const el = document.getElementById(containerId);
+    if (!items.length) {
+      el.innerHTML = `<div style="color:var(--text3);font-size:0.85rem;padding:12px 0;">Nothing here yet — click "+ Add Item" to add.</div>`;
+      return;
+    }
+    el.innerHTML = items.map(item => `
+      <div style="background:var(--bg2);border:1px solid ${item.done?'rgba(46,201,126,0.3)':'var(--border)'};border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;${item.done?'opacity:0.6':''};">
+        <input type="checkbox" ${item.done?'checked':''} onchange="toggleShoppingDone('${item.id}')" style="margin-top:4px;width:18px;height:18px;accent-color:var(--green);flex-shrink:0;cursor:pointer;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:0.95rem;${item.done?'text-decoration:line-through;color:var(--text3)':''}">${item.name}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;font-size:0.78rem;color:var(--text2);">
+            ${item.qty ? `<span>📦 Qty: ${item.qty}</span>` : ''}
+            ${item.price ? `<span>💰 ~${fmtMoney(item.price)}</span>` : ''}
+            ${item.supplier ? `<span>🏪 ${item.supplier}</span>` : ''}
+          </div>
+          ${item.note ? `<div style="font-size:0.78rem;color:var(--text3);margin-top:3px;">📝 ${item.note}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-ghost btn-sm" onclick="openShoppingModal('${item.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteShoppingItem('${item.id}')">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderItems(restock, 'shoppingRestock');
+  renderItems(buy, 'shoppingBuy');
+}
+
+// ═══════════════════════════════════════════════════════
 //  FAB (Floating Action Button)
 // ═══════════════════════════════════════════════════════
 let _fabOpen = false;
@@ -5057,6 +5265,11 @@ window.closeSmartScanner = closeSmartScanner;
 window.handleSmartScan = handleSmartScan;
 window.showSmartScanResult = showSmartScanResult;
 window.applyBackground = applyBackground;
+window.openShoppingModal = openShoppingModal;
+window.saveShoppingItem = saveShoppingItem;
+window.toggleShoppingDone = toggleShoppingDone;
+window.deleteShoppingItem = deleteShoppingItem;
+window.renderShoppingList = renderShoppingList;
 window.previewBg = previewBg;
 window.clearBg = clearBg;
 window.updateBgOpacity = updateBgOpacity;
