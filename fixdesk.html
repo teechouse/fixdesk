@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="/fixdesk/manifest.json">
-<title>Tech House</title>
+<title>FixDesk — Tech House</title>
 <meta name="version" content="2.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1847,7 +1846,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 //  FIREBASE SETUP
 // ========================================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, collection, getDocs, setDoc, deleteDoc, onSnapshot, writeBatch, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, collection, getDocs, setDoc, deleteDoc, onSnapshot, writeBatch, getDoc,
+  enableNetwork, disableNetwork, waitForPendingWrites
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAJTsw5BH8d46v8IgJ9lFN9GXd2NgAfqVQ",
@@ -1860,7 +1863,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+// Enable offline persistence — caches all data locally and queues writes
+// made while offline, auto-syncing the moment internet returns.
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
 
 // ========================================================
 //  FIRESTORE DB LAYER
@@ -1872,12 +1882,49 @@ const COLLECTIONS = ['repairs','thesis','inventory','transactions','earnings','s
 // Setup real-time listeners for all collections
 function setupListeners() {
   COLLECTIONS.forEach(col => {
-    onSnapshot(collection(db, col), snap => {
+    onSnapshot(collection(db, col), { includeMetadataChanges: true }, snap => {
       _cache[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       onCollectionUpdate(col);
+      updateSyncBadge(snap.metadata.fromCache, snap.metadata.hasPendingWrites);
     });
   });
 }
+
+// ── ONLINE / OFFLINE BADGE ──────────────────────────────────
+let _hasPendingWrites = false;
+
+function updateSyncBadge(fromCache, hasPendingWrites) {
+  if (hasPendingWrites) _hasPendingWrites = true;
+  const badge = document.getElementById('syncStatus');
+  if (!badge) return;
+  if (navigator.onLine === false) {
+    badge.innerHTML = '📡 Offline — saved locally';
+    badge.style.background = 'rgba(245,96,66,0.12)';
+    badge.style.color = 'var(--red)';
+    badge.style.borderColor = 'rgba(245,96,66,0.3)';
+  } else if (hasPendingWrites || (_hasPendingWrites && fromCache)) {
+    badge.innerHTML = '🔄 Syncing…';
+    badge.style.background = 'rgba(245,200,66,0.12)';
+    badge.style.color = 'var(--yellow)';
+    badge.style.borderColor = 'rgba(245,200,66,0.3)';
+  } else {
+    _hasPendingWrites = false;
+    badge.innerHTML = '☁️ Synced';
+    badge.style.background = 'var(--green-bg)';
+    badge.style.color = 'var(--green)';
+    badge.style.borderColor = 'rgba(46,201,126,0.3)';
+  }
+}
+
+// Listen to browser online/offline events directly
+window.addEventListener('online', () => {
+  toast('🌐 Back online — syncing your changes…', 'info');
+  updateSyncBadge(false, _hasPendingWrites);
+});
+window.addEventListener('offline', () => {
+  toast('📡 You are offline. You can keep working — changes will sync automatically once reconnected.', 'warn');
+  updateSyncBadge(true, true);
+});
 
 // Called whenever a collection updates — refresh the right page
 function onCollectionUpdate(col) {
